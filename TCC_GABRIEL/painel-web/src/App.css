@@ -1,0 +1,380 @@
+.dashboard {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Link "pular para o conteúdo": só aparece ao receber foco via teclado */
+.pular-conteudo {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  z-index: 10;
+}
+
+.pular-conteudo:focus {
+  top: 16px;
+}
+
+/* ---------- Cabeçalho ---------- */
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--header-bg);
+  color: #fff;
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.cabecalho-titulo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cabecalho-icone {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+}
+
+.cabecalho h1 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.cabecalho-rota {
+  color: #c7c7cc;
+  font-size: 0.9rem;
+}
+
+.relogio {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 6px 16px;
+  border-radius: 10px;
+}
+
+/* ---------- Cartões de resumo ---------- */
+.resumo {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+}
+
+.cartao-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+.cartao-rotulo {
+  font-weight: 700;
+}
+
+.cartao-detalhe {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.cartao-passageiros {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 200px;
+}
+
+.cartao-passageiros .cartao-rotulo {
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.contador {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bolinha de status do GPS */
+.indicador {
+  position: relative;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--warning);
+}
+
+.gps-ativo .indicador {
+  background: var(--success);
+}
+
+.gps-ativo .indicador::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulsar 1.6s ease-out infinite;
+}
+
+.gps-ativo .cartao-rotulo {
+  color: var(--success-text);
+}
+
+.gps-erro .indicador {
+  background: var(--danger);
+}
+
+.gps-erro .cartao-rotulo {
+  color: var(--danger-text);
+}
+
+.gps-aguardando .indicador {
+  animation: piscar 1.2s ease-in-out infinite;
+}
+
+@keyframes pulsar {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes piscar {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.alerta-erro {
+  background: #fdecea;
+  color: var(--danger-text);
+  border: 1px solid #f8c7c3;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  font-weight: 500;
+}
+
+/* ---------- Tabela ---------- */
+.tabela-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.tabela-card:focus-visible {
+  box-shadow: var(--focus-ring);
+}
+
+.tabela-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabela-cabecalho h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.tabela-contagem {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.tabela-rolagem {
+  overflow-x: auto;
+}
+
+.tabela-checkin {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-checkin th,
+.tabela-checkin td {
+  padding: 14px 20px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.tabela-checkin thead th {
+  background: #f8f8fa;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.tabela-checkin tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.tabela-checkin tbody tr:hover {
+  background: #eef5ff;
+}
+
+.tabela-checkin tbody tr:last-child th,
+.tabela-checkin tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.celula-nome {
+  font-weight: 600;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tag-qr {
+  background: #fff2e0;
+  color: #8a4b00;
+}
+
+.tag-nfc {
+  background: #f0e9ff;
+  color: #5b2bb5;
+}
+
+.tag-sucesso {
+  background: #e3f7e8;
+  color: var(--success-text);
+}
+
+.tag-negado {
+  background: #fdecea;
+  color: var(--danger-text);
+}
+
+/* ---------- Paginação ---------- */
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.paginacao button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.paginacao button:hover:not(:disabled) {
+  background: #eef5ff;
+  border-color: var(--primary);
+}
+
+.paginacao button:disabled {
+  color: #aeaeb2;
+  cursor: not-allowed;
+}
+
+/* ---------- Estados vazios ---------- */
+.estado-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.estado-vazio-icone {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #e5f0ff;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.estado-vazio-titulo {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5f0ff;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .relogio {
+    font-size: 1.25rem;
+  }
+}

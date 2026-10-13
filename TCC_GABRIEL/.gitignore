@@ -1,0 +1,13 @@
+# Dependências e builds
+node_modules/
+dist/
+target/
+.expo/
+web-build/
+
+# Arquivos locais
+*.zip
+.env
+.env.local
+!.env.example
+.claude/launch.json
