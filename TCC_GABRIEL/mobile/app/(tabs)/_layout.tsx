@@ -1,10 +1,14 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
+import { useAuth } from '@/services/auth';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 
 export default function TabLayout() {
+  const { sessao } = useAuth();
+  if (!sessao) return <Redirect href="/" />;
+  if (sessao.role !== 'ESTUDANTE') return <Redirect href="/motorista" />;
   return (
     <Tabs
       screenOptions={{

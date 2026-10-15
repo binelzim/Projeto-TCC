@@ -13,7 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/toast';
 import { Colors, MIN_TOUCH, Radius, Spacing, Typography } from '@/constants/theme';
-import { buscarLocalizacao, PLACA_VEICULO, type Localizacao } from '@/services/api';
+import { buscarLocalizacao, mensagemDeErro, PLACA_VEICULO, type Localizacao } from '@/services/api';
+import { isAxiosError } from 'axios';
 
 const INTERVALO_POLLING_MS = 5000;
 
@@ -30,7 +31,10 @@ export default function MapaScreen() {
           setLocalizacao(loc);
           setErro(null);
         })
-        .catch(() => setErro('Aguardando transmissão do motorista...'));
+        .catch((e: unknown) => {
+          setLocalizacao(null);
+          setErro(isAxiosError(e) && e.response?.status === 404 ? 'Aguardando transmissão do motorista...' : mensagemDeErro(e, 'Falha ao consultar a localização.'));
+        });
     };
 
     buscarGPS();
@@ -71,7 +75,7 @@ export default function MapaScreen() {
               <View style={styles.statusLinha}>
                 <IconePulsante />
                 <View style={styles.statusTextos}>
-                  <Text style={styles.statusTitulo}>Van em movimento</Text>
+                  <Text style={styles.statusTitulo}>Localização da van disponível</Text>
                   <Text style={Typography.caption}>Atualizado em tempo real (a cada 5s)</Text>
                 </View>
               </View>

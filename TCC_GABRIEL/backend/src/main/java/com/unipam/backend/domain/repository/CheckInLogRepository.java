@@ -10,6 +10,7 @@ import java.util.List;
 
 @Repository
 public interface CheckInLogRepository extends JpaRepository<CheckInLog, Long> {
+    void deleteByVeiculoPlacaAndTimestampValidacaoGreaterThanEqualAndTimestampValidacaoLessThan(String placa, LocalDateTime inicio, LocalDateTime fim);
     
     // Histórico de check-ins de um aluno específico
     List<CheckInLog> findByEstudanteId(Long estudanteId);

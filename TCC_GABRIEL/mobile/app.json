@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Rota Universitária",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -57,7 +57,13 @@
       "expo-image",
       "expo-status-bar",
       "expo-web-browser",
-      "react-native-nfc-manager"
+      "react-native-nfc-manager",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permita a localização para transmitir a posição da van enquanto o painel estiver aberto."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

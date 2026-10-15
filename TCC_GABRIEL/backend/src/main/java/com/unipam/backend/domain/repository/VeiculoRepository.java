@@ -9,6 +9,9 @@ import java.util.List;
 
 @Repository
 public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select v from Veiculo v where v.placa = :placa")
+    Optional<Veiculo> bloquearPorPlaca(@org.springframework.data.repository.query.Param("placa") String placa);
     
     // Método personalizado: O Spring entende o nome do método e cria o SQL automaticamente!
     Optional<Veiculo> findByPlaca(String placa);

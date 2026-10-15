@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: rota-universitaria-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DEMO_ENABLED
+        value: "true"
+      - key: CHECKIN_COOLDOWN_SECONDS
+        value: "10"
+

@@ -10,8 +10,8 @@ export const Colors = {
   text: '#1C1C1E',
   textSecondary: '#636366', // contraste 5.9:1 sobre #F2F2F7 (WCAG AA)
   border: '#D1D1D6',
-  primary: '#007AFF',
-  primaryPressed: '#0062CC',
+  primary: '#0062CC',
+  primaryPressed: '#004FA6',
   success: '#34C759',
   successText: '#1E7B34', // verde escurecido para texto (contraste AA)
   danger: '#FF3B30',

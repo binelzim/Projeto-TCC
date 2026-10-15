@@ -82,7 +82,7 @@ public class CheckInLog {
 
     @PrePersist
     protected void onCreate() {
-        this.timestampValidacao = LocalDateTime.now(); // Garante o registro exato do momento do embarque
+        if (this.timestampValidacao == null) this.timestampValidacao = LocalDateTime.now();
     }
 
     // Construtores, Getters e Setters

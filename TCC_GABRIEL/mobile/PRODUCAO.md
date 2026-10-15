@@ -1,58 +1,35 @@
-# Preparação para produção (App do Aluno)
+# Aplicativo — publicação e teste
 
-## 1. Variáveis de ambiente
+O app usa Expo SDK 57 e atende estudante e motorista. O guia completo está em [DEPLOY_NUVEM.md](../DEPLOY_NUVEM.md).
 
-Copie `.env.example` para `.env` e aponte para o backend:
+## Endereço da API
 
-```
-EXPO_PUBLIC_API_URL=http://SEU_IP_LOCAL:8080/api/checkin
-```
+Copie .env.example para .env e use apenas a origem:
 
-A URL **deve terminar em `/api/checkin`**; o app deriva a raiz do servidor a partir dela para acessar `/api/rastreio`
-(ver `services/api.ts`). Para o build de produção, defina a URL da nuvem no perfil do `eas.json`:
-
-```json
-"production": {
-  "autoIncrement": true,
-  "env": { "EXPO_PUBLIC_API_URL": "https://SEU_DOMINIO/api/checkin" }
-}
+```text
+EXPO_PUBLIC_API_URL=https://SUA_API.onrender.com
 ```
 
-O painel web usa `VITE_API_URL` (ver `painel-web/.env.example`), sem o `/api` no final.
+Em desenvolvimento no navegador, pode usar http://localhost:8080. No celular físico, use o IP do computador ou o endereço HTTPS da nuvem. Não acrescente /api/checkin. Sufixos antigos são removidos automaticamente por services/api.ts.
 
-## 2. Reativar o NFC
+## Web
 
-O Expo Go não carrega módulos nativos, por isso o NFC está desligado em `app/(tabs)/scanner.tsx`.
-Faça isso **somente** quando for gerar o APK/AAB (development build ou produção):
-
-1. Descomente o import no topo do arquivo:
-   ```ts
-   import NfcManager, { NfcTech } from 'react-native-nfc-manager';
-   ```
-2. Substitua o corpo de `iniciarLeituraNFC` por:
-   ```ts
-   const iniciarLeituraNFC = async () => {
-     try {
-       await NfcManager.start();
-       await NfcManager.requestTechnology(NfcTech.Ndef);
-       const tag = await NfcManager.getTag();
-       if (tag?.id) await processarCheckIn(tag.id, 'NFC');
-     } catch {
-       mostrarToast('erro', 'Leitura cancelada', 'Aproxime a carteirinha novamente.');
-     } finally {
-       NfcManager.cancelTechnologyRequest();
-     }
-   };
-   ```
-3. O plugin `react-native-nfc-manager` e a permissão `android.permission.NFC` já estão no `app.json`.
-
-## 3. Gerar o build
-
-```bash
-npm install -g eas-cli
-eas login
-eas build -p android --profile preview      # APK para instalar direto no celular
-eas build -p android --profile production   # AAB para a Play Store
+```text
+npm ci
+npx expo export --platform web
 ```
 
-Para testar com NFC durante o desenvolvimento, use `eas build --profile development` e rode `npx expo start --dev-client`.
+Publique a pasta dist. O vercel.json já configura o build e as URLs estáticas. A autenticação ocorre no cliente e a API protege cada operação por perfil.
+
+## Aplicativo instalado
+
+Configure EXPO_PUBLIC_API_URL no ambiente usado pelo EAS. Use o perfil preview de eas.json para uma distribuição interna e production para a loja. Não há novas bibliotecas de mapas; o rastreio mantém o radar e o link para Google Maps.
+
+A localização usa o módulo oficial expo-location, na versão compatível com o Expo instalado. A transmissão funciona enquanto o painel estiver em primeiro plano. Negação de permissão é apresentada na tela.
+
+## NFC
+
+A implementação está em services/nfc.ts. No Expo Go e navegador, o botão explica a indisponibilidade. Em um build nativo com aparelho compatível, lê o primeiro registro de texto NDEF. Grave ABC-1234 na tag do veículo ou a matrícula/token na carteirinha do respectivo estudante. O backend sempre vincula o embarque ao aluno autenticado.
+
+Não é necessário descomentar código para habilitar NFC. O plugin já está no app.json. GPS, câmera e NFC precisam de teste final em aparelho físico; a exportação web não confirma o funcionamento do hardware.
+

@@ -1,40 +1,23 @@
 package com.unipam.backend.controller;
-
+import com.unipam.backend.domain.service.*;
 import com.unipam.backend.dto.LocalizacaoDTO;
-import com.unipam.backend.domain.service.RastreioService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-@RestController
-@RequestMapping("/api/rastreio")
-@CrossOrigin(origins = "*") // Permite o acesso do navegador (React) e do Mobile
+@RestController @RequestMapping("/api/rastreio")
 public class RastreioController {
-
-    private final RastreioService rastreioService;
-
-    public RastreioController(RastreioService rastreioService) {
-        this.rastreioService = rastreioService;
-    }
-
-    // Endpoint para o Painel Web ATUALIZAR o GPS (A cada 5 segundos)
+    private final RastreioService rastreio;
+    private final AuthService auth;
+    public RastreioController(RastreioService rastreio, AuthService auth) { this.rastreio = rastreio; this.auth = auth; }
     @PostMapping("/{placa}")
-    public ResponseEntity<?> atualizarGPS(@PathVariable String placa, @RequestBody LocalizacaoDTO request) {
-        try {
-            rastreioService.atualizarLocalizacao(placa, request.getLatitude(), request.getLongitude());
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Erro ao processar GPS");
-        }
+    public void atualizar(@RequestHeader(value = "Authorization", required = false) String h, @PathVariable String placa, @RequestBody LocalizacaoDTO req) {
+        auth.exigir(h, "MOTORISTA"); rastreio.atualizar(placa, req.latitude(), req.longitude(), h);
     }
-
-    // Endpoint para a Aplicação do Aluno BUSCAR o GPS (A cada 5 segundos)
     @GetMapping("/{placa}")
-    public ResponseEntity<?> buscarGPS(@PathVariable String placa) {
-        try {
-            LocalizacaoDTO loc = rastreioService.obterLocalizacao(placa);
-            return ResponseEntity.ok(loc);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build(); // Retorna 404 se a van ainda não estiver online
-        }
+    public LocalizacaoDTO buscar(@RequestHeader(value = "Authorization", required = false) String h, @PathVariable String placa) {
+        auth.exigir(h, null); return rastreio.obterLocalizacao(placa);
+    }
+    @DeleteMapping("/{placa}")
+    public void parar(@RequestHeader(value = "Authorization", required = false) String h, @PathVariable String placa) {
+        auth.exigir(h, "MOTORISTA"); rastreio.parar(placa, h);
     }
 }
+

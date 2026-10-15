@@ -1,31 +1,14 @@
 package com.unipam.backend.controller;
-
 import com.unipam.backend.domain.service.AuthService;
-import com.unipam.backend.dto.LoginRequestDTO;
-import com.unipam.backend.dto.LoginResponseDTO;
-import org.springframework.http.ResponseEntity;
+import com.unipam.backend.dto.*;
 import org.springframework.web.bind.annotation.*;
-
-@RestController
-@RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
+@RestController @RequestMapping("/api/auth")
 public class AuthController {
-
-    private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
+    private final AuthService auth;
+    public AuthController(AuthService auth) { this.auth = auth; }
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
-        try {
-            LoginResponseDTO response = authService.autenticar(request.matricula(), request.senha());
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Erro interno no servidor.");
-        }
-    }
+    public LoginResponseDTO login(@RequestBody LoginRequestDTO request) { return auth.autenticar(request.matricula(), request.senha()); }
+    @PostMapping("/logout")
+    public void logout(@RequestHeader(value = "Authorization", required = false) String header) { auth.sair(header); }
 }
+
