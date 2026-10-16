@@ -85,6 +85,10 @@ npx expo export --platform web
 
 A exportação cria páginas estáticas em mobile/dist. O vercel.json inclui a configuração de publicação. Os testes do backend cobrem o ciclo, concorrência de leituras, permissões, cadastros, múltiplas linhas, paradas, avisos e GPS. Os testes do app cobrem os cálculos, filtro e relatório. Veja [RELATORIO_EXECUCAO.md](RELATORIO_EXECUCAO.md).
 
+## Android, iOS e NFC
+
+A versão 1.1.0 usa leitura NDEF de texto para tags NTAG, com cancelamento, proteção contra sessões simultâneas e tratamento de NFC desligado. Os builds nativos usam a API pública. O guia [NFC_ANDROID_IOS.md](NFC_ANDROID_IOS.md) reúne downloads, preparação da tag, resultados dos testes e as etapas que dependem de aparelho físico e assinatura Apple. A versão iOS para simulador não instala no iPhone.
+
 ## Limites e persistência
 
 H2, sessões e GPS são mantidos em memória por padrão. Reiniciar a API apaga os cadastros e viagens do H2 e recria os exemplos. Para registros persistentes, configure PostgreSQL. Recarregar o app exige novo login; as preferências visuais permanecem.

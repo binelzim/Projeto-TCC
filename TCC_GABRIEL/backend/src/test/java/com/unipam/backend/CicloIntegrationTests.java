@@ -61,6 +61,19 @@ class CicloIntegrationTests {
         assertEquals(1, numero(painel(), "$.foramHoje")); assertEquals(1, numero(painel(), "$.jaVoltaram"));
         assertEquals(0, numero(painel(), "$.faltamChegar")); assertEquals(2, logs.count());
     }
+    @Test void nfcValidaIdentidadeRegistraMetodoEProtegeContraRepeticao() {
+        String nfc = leitura("22009264").replace("QR_CODE", "NFC");
+        chamar("POST", "/api/checkin/realizar", aluno, leitura("22009265").replace("QR_CODE", "NFC"), 403);
+        String ida = chamar("POST", "/api/checkin/realizar", aluno, nfc, 200);
+        assertEquals("NA_FACULDADE", campo(ida, "$.status"));
+        chamar("POST", "/api/checkin/realizar", aluno, nfc, 409);
+        clock.now = BASE.plusSeconds(11);
+        String volta = chamar("POST", "/api/checkin/realizar", aluno, nfc, 200);
+        assertEquals("EMBARCADO_VOLTA", campo(volta, "$.status"));
+        assertEquals(2, logs.count());
+        assertTrue(logs.findAll().stream().allMatch(log -> log.getMetodo().name().equals("NFC")));
+        chamar("POST", "/api/checkin/realizar", aluno, nfc, 409);
+    }
     @Test void scansConcorrentesNaoGeramVolta() throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(2);
         try {

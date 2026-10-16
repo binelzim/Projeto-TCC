@@ -4,6 +4,11 @@ dist/
 target/
 .expo/
 web-build/
+dist-nfc-web/
+dist-native/
+*.apk
+*.aab
+*.ipa
 
 # Arquivos locais
 *.zip

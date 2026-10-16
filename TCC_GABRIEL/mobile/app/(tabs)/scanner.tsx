@@ -1,13 +1,13 @@
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { useIsFocused } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { AppState, Text, View, StyleSheet } from 'react-native';
 import { AvisoBanner, Botao, Card, Header, Page, useUI } from '@/components/ui';
 import { useAuth } from '@/services/auth';
 import { usePerfil } from '@/services/perfil';
 import { useSettings } from '@/services/settings';
 import { buscarConfig, buscarMeuDia, dispensarVolta, hora, mensagemDeErro, realizarCheckIn, type Passageiro, type MetodoValidacao } from '@/services/api';
-import { lerNfc, cancelarNfc } from '@/services/nfc';
+import { lerNfc, cancelarNfc, LeituraCancelada } from '@/services/nfc';
 
 export default function Scanner() {
   const ui = useUI(); const { sessao } = useAuth(); const { perfil } = usePerfil(); const { announce, vibrate } = useSettings();
@@ -18,6 +18,17 @@ export default function Scanner() {
   const [mensagem, setMensagem] = useState(''); const [erro, setErro] = useState('');
   const [confirmarDispensa, setConfirmarDispensa] = useState(false); const [agora, setAgora] = useState(() => Date.now());
   const trava = useRef(false); const foco = useIsFocused();
+  const leituraAtiva = useRef(false); const telaAtiva = useRef(false);
+  const [lendoNfc, setLendoNfc] = useState(false);
+  useEffect(() => {
+    telaAtiva.current = foco;
+    const listener = AppState.addEventListener('change', estado => {
+      // iOS temporarily becomes inactive while its native NFC sheet is visible.
+      if (estado === 'background') { telaAtiva.current = false; cancelarNfc(); }
+      if (estado === 'active') telaAtiva.current = foco;
+    });
+    return () => { telaAtiva.current = false; cancelarNfc(); listener.remove(); };
+  }, [foco]);
   useEffect(() => { void buscarConfig().then(r => setDemo(r.demoEnabled)).catch(() => {}); }, []);
   useEffect(() => {
     if (!foco) return;
@@ -53,9 +64,15 @@ export default function Scanner() {
     } catch { setErro('Câmera indisponível. Consulte a Central de Ajuda.'); }
   };
   const nfc = async () => {
-    setBusy(true); setErro('');
-    try { await registrar(await lerNfc(), 'NFC'); }
-    catch (e) { setErro(e instanceof Error ? e.message : 'Não foi possível ler a tag NFC.'); } finally { setBusy(false); }
+    if (leituraAtiva.current || trava.current) return;
+    leituraAtiva.current = true;
+    setBusy(true); setLendoNfc(true); setCamera(false); setErro(''); setMensagem('');
+    try {
+      const token = await lerNfc();
+      if (telaAtiva.current) await registrar(token, 'NFC');
+    } catch (e) {
+      if (telaAtiva.current && !(e instanceof LeituraCancelada)) setErro(e instanceof Error ? e.message : 'Não foi possível ler a tag NFC.');
+    } finally { leituraAtiva.current = false; setLendoNfc(false); setBusy(false); }
   };
   const dispensar = async () => {
     setBusy(true); trava.current = true; setErro('');
@@ -80,7 +97,11 @@ export default function Scanner() {
         <Text style={ui.body}>Aponte para o QR Code. A câmera fecha após uma leitura.</Text>
         <Botao secondary icon="close" onPress={() => setCamera(false)}>Fechar câmera</Botao>
       </> : <Botao icon="qr-code-scanner" onPress={() => { void abrirCamera(); }} disabled={bloqueado}>Ler QR Code</Botao>}
-      <Botao secondary icon="contactless" disabled={bloqueado} onPress={() => { void nfc(); }}>Ler carteirinha NFC</Botao>
+      <Botao secondary icon="contactless" disabled={bloqueado} onPress={() => { void nfc(); }}>Ler tag NFC</Botao>
+      {lendoNfc && <>
+        <Text accessibilityLiveRegion="polite" style={ui.body}>Aproxime e mantenha a tag encostada na parte superior do iPhone ou na traseira do Android. Aguardando leitura…</Text>
+        <Botao secondary icon="close" onPress={() => cancelarNfc()}>Cancelar leitura NFC</Botao>
+      </>}
       {demo && <><Botao secondary icon="science" disabled={bloqueado} onPress={() => { if (placa) void registrar(placa); }}>Simular leitura do QR Code (Demo)</Botao>
         <Text style={ui.label}>A simulação registra um embarque na demonstração e funciona sem câmera.</Text></>}
     </Card>}

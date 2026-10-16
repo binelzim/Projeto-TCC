@@ -42,4 +42,5 @@ app-example
 /ios
 /android
 
-EXPO_PUBLIC_API_URL=https://sarcasm-bush-emblaze.ngrok-free.dev/api/checkin
+.env
+dist-nfc-web/
