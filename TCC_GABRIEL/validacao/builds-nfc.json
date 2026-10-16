@@ -1,0 +1,40 @@
+{
+  "versao": "1.1.0",
+  "commit_codigo": "c142bccf4af0cd0835f3ddc2144e0315b2421d6f",
+  "testes_app": 14,
+  "testes_api": 23,
+  "leitura_fisica": "PENDENTE: nenhum aparelho conectado",
+  "execucao_emulador_simulador": "NAO EXECUTADA: somente compilacao nativa e inspecao dos pacotes",
+  "android": {
+    "arquivo": "rota-universitaria-1.1.0-android.apk",
+    "bytes": 129460549,
+    "sha256": "507a6b22d200a68c895f966c1940ed99175f4192084a8be1bc6241fa6749c76d",
+    "zip_integro": true,
+    "permissao_nfc": true,
+    "pacote_correto": true,
+    "modulo_nativo_nfc": true,
+    "api_publica": true,
+    "build_id": "356e6ca6-098a-442a-9283-ba696fb679a6",
+    "status": "FINISHED",
+    "download": "https://expo.dev/artifacts/eas/K3dQ_8ycOW9TjUmagD-4_CJEbdLV2GxY-tAVlirIsPI.apk",
+    "completed_at": "2026-10-16T02:43:49.021Z",
+    "expira_em": "2026-10-30T02:24:25.684Z"
+  },
+  "ios_simulador": {
+    "arquivo": "rota-universitaria-1.1.0-ios-simulator.tar.gz",
+    "bytes": 30327087,
+    "sha256": "98ed73de54e83a644eb7c389398c381c0ebca390e48b9d92e92731ada42ea3de",
+    "plataforma": [
+      "iPhoneSimulator"
+    ],
+    "pacote": "com.tcc.transporte",
+    "versao": "1.1.0",
+    "permissao_nfc": "Permita a leitura da tag NFC para identificar seu embarque.",
+    "api_publica": true,
+    "build_id": "239c2105-235e-4ccd-9490-40d6eef62546",
+    "status": "FINISHED",
+    "download": "https://expo.dev/artifacts/eas/ZUbRsvVJR8ucoK3J2J8U2MtBRb3p-FVlB3hkKdqKnvQ.tar.gz",
+    "completed_at": "2026-10-16T02:31:23.459Z",
+    "expira_em": "2026-10-30T02:24:46.068Z"
+  }
+}

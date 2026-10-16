@@ -2,6 +2,13 @@
 
 O aplicativo lê uma tag NTAG com um registro NDEF de texto UTF-8 e envia a identificação à API publicada. O servidor exige login e valida se a identificação corresponde à matrícula do aluno conectado ou à placa do veículo de sua linha. O número de série físico (UID) da tag não é usado como matrícula.
 
+## Arquivos gerados
+
+- [Android: baixar APK 1.1.0](https://expo.dev/artifacts/eas/K3dQ_8ycOW9TjUmagD-4_CJEbdLV2GxY-tAVlirIsPI.apk), aproximadamente 129 MB.
+- [iOS: baixar aplicativo para simulador](https://expo.dev/artifacts/eas/ZUbRsvVJR8ucoK3J2J8U2MtBRb3p-FVlB3hkKdqKnvQ.tar.gz), aproximadamente 30 MB. Não instala em iPhone físico.
+
+Os arquivos também estão salvos em `dist-native/`. A Expo informa retenção até 30/10/2026; preserve as cópias locais. Os identificadores dos builds, hashes SHA-256 e verificações dos pacotes estão em [validacao/builds-nfc.json](validacao/builds-nfc.json). O código correspondente foi enviado no commit `c142bcc`.
+
 ## Preparar sua tag
 
 1. No iPhone, instale [NFC Tools, da wakdev](https://apps.apple.com/app/nfc-tools/id1252962749).
@@ -45,7 +52,8 @@ Uma tag NDEF comum pode ser copiada. A matrícula na tag identifica o registro; 
 - TypeScript e lint aprovados. Exportação web aprovada, com 12 rotas.
 - Navegador: login na API pública aprovado após a inicialização do servidor. O botão NFC exibiu a orientação para instalar o aplicativo nativo e manteve a ida sem registro; evidência em `validacao/nfc-web-requer-app.png`. Houve aviso de hidratação React na carga inicial da exportação web, sem impedir esse fluxo; não é teste de execução nativa.
 - iOS simulador: compilação nativa concluída na Expo; versão 1.1.0, bundle `com.tcc.transporte`, permissão NFC em português e endereço público da API confirmados dentro do arquivo gerado. [Build e logs](https://expo.dev/accounts/binel/projects/mobile/builds/239c2105-235e-4ccd-9490-40d6eef62546) · [Download para simulador](https://expo.dev/artifacts/eas/ZUbRsvVJR8ucoK3J2J8U2MtBRb3p-FVlB3hkKdqKnvQ.tar.gz).
-- Android: compilação em andamento; o resultado será registrado após a conclusão da Expo.
+- Android: APK assinado concluído na Expo; integridade do arquivo, permissão NFC, pacote `com.tcc.transporte`, módulo nativo NFC e endereço da API pública confirmados no APK baixado. [Build e logs](https://expo.dev/accounts/binel/projects/mobile/builds/356e6ca6-098a-442a-9283-ba696fb679a6).
+- Os pacotes não foram executados em emulador ou simulador neste Windows. A compilação iOS foi executada na infraestrutura macOS da Expo.
 - Nenhuma leitura física de NFC foi executada neste computador. Não confundir compilação bem-sucedida com validação da antena no aparelho.
 
 ## Reproduzir a compilação
