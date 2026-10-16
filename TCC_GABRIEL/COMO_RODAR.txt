@@ -1,0 +1,72 @@
+COMO RODAR — ROTA UNIVERSITÁRIA (APP ÚNICO)
+
+Pré-requisitos: Java JDK 17 e Node.js 22.13 ou posterior compatível.
+Use dois terminais PowerShell e mantenha ambos abertos.
+
+1. SERVIDOR — TERMINAL 1
+
+cd C:\projetos\TCC_GABRIEL\backend
+.\mvnw.cmd spring-boot:run
+
+Confira http://localhost:8080/api/health
+A resposta deve ser {"status":"UP"}.
+Não precisa instalar banco nem executar seed.sql para a demonstração.
+
+2. APLICATIVO — TERMINAL 2
+
+cd C:\projetos\TCC_GABRIEL\mobile
+npm ci
+npx expo start --web --port 8081
+
+Abra http://localhost:8081
+O mesmo endereço serve para estudante e motorista.
+
+Na primeira configuração, copie mobile/.env.example para mobile/.env.
+Para navegador no computador:
+EXPO_PUBLIC_API_URL=http://localhost:8080
+
+No celular físico, use o IP local do computador ou a URL HTTPS da API.
+Não acrescente /api. Reinicie o Expo depois de alterar a variável.
+Preserve o .env se ele já estiver configurado para seu aparelho.
+
+3. CONTAS DE TESTE
+
+Motorista: motorista / motorista123
+Gabriel: 22009264 / demo-hash-22009264
+Ana: 22009265 / demo-hash-22009265
+Código para cadastrar motorista: FROTA-UNIPAM
+Placa da demonstração: ABC-1234
+
+Abra duas abas do aplicativo e entre com um perfil em cada uma.
+Primeira simulação registra ida. Depois de 10 segundos, a segunda registra volta.
+O aluno também pode avisar que não volta hoje.
+No motorista: Viagem, Passageiros, Rota e Avisos.
+No aluno: Embarque, Minha linha e Carteirinha.
+Ajustes e Ajuda ficam no cabeçalho.
+
+4. PARAR OU REINICIAR
+
+Pressione Ctrl+C em cada terminal.
+O H2 é temporário: reiniciar o servidor apaga novos cadastros e viagens,
+recriando as contas iniciais. Para persistir dados, consulte DEPLOY_NUVEM.md.
+
+Se a porta estiver ocupada, use a instância existente ou encerre-a no terminal
+em que iniciou. Não inicie dois servidores na mesma porta.
+Se houver erro de conexão, confira primeiro a URL /api/health e o .env do app.
+
+5. CODESPACES
+
+Abra dois terminais, um em backend e outro em mobile.
+No backend: bash ./mvnw spring-boot:run
+No mobile: npm ci e depois npx expo start --web --port 8081
+
+Encaminhe as portas 8080 e 8081 na aba Ports.
+Configure EXPO_PUBLIC_API_URL com o endereço HTTPS encaminhado da porta 8080.
+Use somente dados fictícios em uma demonstração pública e restrinja o acesso
+quando terminar. O navegador fora do Codespace não alcança a API pelo localhost
+do servidor remoto.
+
+GPS e câmera precisam de permissão e contexto seguro.
+NFC só funciona em aplicativo compilado e aparelho compatível.
+Consulte README.md para funcionalidades e DEPLOY_NUVEM.md para publicar.
+
