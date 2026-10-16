@@ -1,8 +1,16 @@
 package com.unipam.backend.controller;
 import java.util.Map;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.ReadinessState;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 @RestController
 public class HealthController {
-    @GetMapping("/api/health") public Map<String, String> health() { return Map.of("status", "UP"); }
+    private final ApplicationAvailability availability;
+    public HealthController(ApplicationAvailability availability) { this.availability = availability; }
+    @GetMapping("/api/health") public ResponseEntity<Map<String, String>> health() {
+        boolean ready = availability.getReadinessState() == ReadinessState.ACCEPTING_TRAFFIC;
+        return ResponseEntity.status(ready ? 200 : 503).body(Map.of("status", ready ? "UP" : "NOT_READY"));
+    }
 }
 

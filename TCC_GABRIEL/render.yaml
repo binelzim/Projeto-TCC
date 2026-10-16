@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: rota-universitaria-api
+    name: rota-universitaria-api-1
     runtime: docker
     plan: free
     branch: main

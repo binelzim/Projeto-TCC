@@ -2,6 +2,13 @@
 
 Aplicativo único para estudante e motorista, com cadastro, controle de ida e volta, rotas, avisos e acompanhamento do transporte.
 
+## Demonstração na nuvem
+
+- [Abrir o aplicativo](https://rota-universitaria-tcc.vercel.app)
+- [Conferir a API](https://rota-universitaria-api-1.onrender.com/api/health)
+
+Publicado em 15/10/2026, com Vercel Hobby e Render Free. Os acessos de demonstração aparecem na tela inicial. H2 e sessões ficam em memória: reinícios apagam os dados da demonstração. O Render pode precisar de cerca de um minuto para acordar após inatividade. Consulte [DEPLOY_NUVEM.md](DEPLOY_NUVEM.md).
+
 ## Estrutura
 
 - **backend**: Java 17 / Spring Boot, autenticação por sessão, JPA e banco H2 automático ou PostgreSQL.
@@ -84,4 +91,4 @@ H2, sessões e GPS são mantidos em memória por padrão. Reiniciar a API apaga 
 
 GPS e câmera precisam de permissão e contexto seguro no navegador, como HTTPS ou localhost. GPS funciona enquanto o app está em primeiro plano; o servidor descarta sinais após 30 segundos. NFC exige aplicativo nativo compilado e aparelho compatível; não funciona no Expo Go ou navegador. No Expo Go compatível com o SDK instalado, use QR Code ou simulação.
 
-A publicação em nuvem e os testes de câmera, GPS, voz, vibração, compartilhamento e NFC em aparelhos físicos são etapas de homologação. O backup **antes-upgrade-unificado.zip** preserva os fontes anteriores a este upgrade.
+A demonstração web está publicada e foi conferida na nuvem. Os testes de câmera, GPS, voz, vibração, compartilhamento e NFC em aparelhos físicos permanecem como etapas de homologação. O backup **antes-upgrade-unificado.zip** preserva os fontes anteriores a este upgrade.

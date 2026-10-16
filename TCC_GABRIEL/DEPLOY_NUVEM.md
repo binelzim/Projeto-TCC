@@ -2,6 +2,16 @@
 
 A arquitetura possui dois serviços: a API Java e o aplicativo Expo, que atende estudante e motorista. A versão de navegador é exportada pelo mesmo projeto usado no celular.
 
+## Endereços publicados em 15/10/2026
+
+- Aplicativo: **https://rota-universitaria-tcc.vercel.app** — projeto `rota-universitaria-tcc`, Vercel Hobby.
+- API: **https://rota-universitaria-api-1.onrender.com** — serviço `rota-universitaria-api-1`, Render Free.
+- Saúde da API: **https://rota-universitaria-api-1.onrender.com/api/health**.
+
+O serviço Render existente foi reaproveitado e o render.yaml usa seu nome. Para atualizar esta publicação, use o serviço existente em vez de criar uma segunda API. EXPO_PUBLIC_API_URL já foi configurada na Vercel para Production e Preview.
+
+A demonstração usa H2 em memória e dados fictícios. Reinícios recriam as contas iniciais e apagam cadastros, histórico e sessões temporários. Confira os [limites do Render Free](https://render.com/docs/free) antes da apresentação.
+
 ## 1. Repositório
 
 Os fontes estão em [binelzim/Projeto-TCC](https://github.com/binelzim/Projeto-TCC), branch **main**. Nesse repositório, o projeto fica dentro de **TCC_GABRIEL/**. Os caminhos configurados nos provedores precisam incluir essa pasta, mesmo que o diretório local já seja o projeto.
@@ -103,4 +113,6 @@ Sessões e GPS ainda ficam na memória da API, mesmo com PostgreSQL: use uma ún
 
 Avisos duram até 12 horas e pertencem à rota; paradas manuais expiram na virada do dia de Brasília. A distância usa linha reta e o tempo é apenas uma referência de deslocamento, sem previsão de trânsito ou sentido do ônibus.
 
-A integração local foi validada com H2. PostgreSQL, Docker, publicação nos provedores e hardware móvel não foram homologados nesta execução.
+H2 e a versão web foram validados localmente e na nuvem. O Dockerfile foi compilado e executado no Render; a exportação estática foi construída na Vercel. PostgreSQL e hardware móvel ainda não foram homologados.
+
+O endpoint /api/health só responde UP após a inicialização completa, incluindo as contas iniciais; durante a preparação ou encerramento, responde 503/NOT_READY. Esse comportamento usa o [estado de prontidão do Spring Boot](https://docs.spring.io/spring-boot/reference/features/spring-application.html#features.spring-application.application-availability.readiness).

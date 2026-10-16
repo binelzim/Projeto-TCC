@@ -10,7 +10,7 @@ A chamada, o GPS, a dispensa e o reinício são limitados ao veículo vinculado.
 
 ## Verificação automatizada
 
-- Backend: 20 testes de integração aprovados, abrangendo ciclo diário, leituras concorrentes, virada do dia, autenticação, cadastros, isolamento entre linhas/veículos, paradas, avisos e GPS.
+- Backend: 22 testes aprovados, abrangendo ciclo diário, leituras concorrentes, virada do dia, autenticação, cadastros, isolamento entre linhas/veículos, paradas, avisos, GPS e prontidão para receber tráfego.
 - App: 6 testes aprovados para Haversine, velocidade/filtro, estimativa, CSV e resumo de compartilhamento.
 - TypeScript e lint aprovados.
 - Exportação web estática concluída.
@@ -26,12 +26,18 @@ A página inicial e a carteirinha também foram conferidas em 1280 px. A dispens
 
 ## Limites
 
-A conferência local utiliza H2 e a versão web. Não foi realizada publicação em nuvem, validação de PostgreSQL/Docker ou homologação física de GPS, câmera, NFC, voz, vibração e compartilhamento nativo.
+A conferência utiliza H2 e a versão web, localmente e na nuvem. O Dockerfile foi compilado e executado no Render. Permanecem pendentes PostgreSQL e homologação física de GPS, câmera, NFC, voz, vibração e compartilhamento nativo.
 
 Sessões e sinais GPS ficam em memória. H2 é temporário. A estimativa é em linha reta, sem trânsito ou roteiro viário. Há uma única mensagem ativa por rota, válida por até 12 horas. Não existe recebimento garantido de avisos com o app fechado.
 
 A implementação manteve o SDK instalado e acrescentou apenas expo-speech e AsyncStorage para os recursos pedidos. Alertas de dependências devem ser tratados com atualizações compatíveis e nova homologação, sem forçar versões principais.
 
 ## Reprodução e publicação
+
+Em 15/10/2026, o app foi publicado em **https://rota-universitaria-tcc.vercel.app** e conectado à API **https://rota-universitaria-api-1.onrender.com**. Foram confirmados acesso público sem login no provedor, páginas /, /ajuda, /configuracoes e /motorista com HTTP 200, CORS, login dos dois perfis, ida e volta e atualização automática da chamada entre duas abas.
+
+O build na Vercel executou npm ci e a exportação Expo com a URL HTTPS da API. O serviço Docker do Render utiliza uma instância Free. A verificação inicial identificou que o endpoint de saúde respondia antes de terminar a criação das contas; ele foi ajustado para usar o estado de prontidão do Spring Boot, com dois testes de regressão.
+
+O instalador da Vercel reportou 30 alertas de dependências (12 moderados e 18 altos), incluindo dependências de desenvolvimento. Eles não foram corrigidos com atualização forçada nesta publicação; continuam como trabalho de atualização e homologação antes de operação real.
 
 Use [COMO_RODAR.txt](COMO_RODAR.txt) para iniciar, [README.md](README.md) para funcionalidades e testes e [DEPLOY_NUVEM.md](DEPLOY_NUVEM.md) para configuração dos provedores e roteiro da banca.
