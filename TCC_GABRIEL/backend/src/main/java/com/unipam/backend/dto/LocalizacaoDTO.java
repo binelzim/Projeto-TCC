@@ -1,4 +1,4 @@
 package com.unipam.backend.dto;
 import java.time.Instant;
-public record LocalizacaoDTO(String placa, Double latitude, Double longitude, Instant ultimaAtualizacao) {}
-
+public record LocalizacaoDTO(String placa, Double latitude, Double longitude, Instant ultimaAtualizacao,
+    Double velocidadeKmh, Double precisaoMetros, Integer paradaAtual) {}

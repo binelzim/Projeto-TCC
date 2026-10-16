@@ -67,6 +67,10 @@ public class CheckInService {
     public PassageiroDTO meuDia(Long estudanteId) {
         return ciclos.findByEstudanteIdAndDia(estudanteId, LocalDate.now(clock)).map(this::dto).orElse(null);
     }
+    @Transactional(readOnly = true)
+    public List<PassageiroDTO> historicoAluno(Long estudanteId) {
+        return ciclos.findTop30ByEstudanteIdOrderByDiaDesc(estudanteId).stream().map(this::dto).toList();
+    }
 
     @Transactional(readOnly = true)
     public PainelDTO painel(String placa) {
@@ -116,4 +120,3 @@ public class CheckInService {
     }
     private ResponseStatusException erro(HttpStatus status, String message) { return new ResponseStatusException(status, message); }
 }
-

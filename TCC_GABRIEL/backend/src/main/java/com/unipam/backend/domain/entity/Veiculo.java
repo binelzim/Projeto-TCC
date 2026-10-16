@@ -5,6 +5,12 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "tb_veiculo")
 public class Veiculo {
+    private Integer paradaAtual = -1;
+    private java.time.Instant paradaAtualizadaEm;
+    public Integer getParadaAtual() { return paradaAtual; }
+    public void setParadaAtual(Integer value) { paradaAtual = value; }
+    public java.time.Instant getParadaAtualizadaEm() { return paradaAtualizadaEm; }
+    public void setParadaAtualizadaEm(java.time.Instant value) { paradaAtualizadaEm = value; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

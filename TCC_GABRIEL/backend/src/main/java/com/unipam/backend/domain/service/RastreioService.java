@@ -18,11 +18,15 @@ public class RastreioService {
     public RastreioService(VeiculoRepository veiculos, Clock clock, @Value("${app.gps.ttl-seconds}") long ttl) {
         this.veiculos = veiculos; this.clock = clock; this.ttl = ttl;
     }
-    public void atualizar(String placa, Double lat, Double lon, String emissor) {
+    public void atualizar(String placa, Double lat, Double lon, Double velocidade, Double precisao, String emissor) {
         if (lat == null || lon == null || !Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Coordenadas GPS inválidas.");
-        if (veiculos.findByPlaca(placa).isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Veículo não encontrado.");
-        frota.put(placa, new Sinal(new LocalizacaoDTO(placa, lat, lon, clock.instant()), emissor));
+        var veiculo = veiculos.findByPlaca(placa).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Veículo não encontrado."));
+        if (velocidade != null && (!Double.isFinite(velocidade) || velocidade < 0 || velocidade > 180))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Velocidade inválida.");
+        if (precisao != null && (!Double.isFinite(precisao) || precisao < 0 || precisao > 100))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sinal GPS impreciso. Aguarde uma leitura melhor.");
+        frota.put(placa, new Sinal(new LocalizacaoDTO(placa, lat, lon, clock.instant(), velocidade == null ? 0 : velocidade, precisao, veiculo.getParadaAtual()), emissor));
     }
     public LocalizacaoDTO obterLocalizacao(String placa) {
         Sinal sinal = frota.get(placa);
@@ -34,4 +38,3 @@ public class RastreioService {
         frota.computeIfPresent(placa, (key, atual) -> atual.emissor().equals(emissor) ? null : atual);
     }
 }
-

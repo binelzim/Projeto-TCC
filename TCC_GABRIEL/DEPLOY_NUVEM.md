@@ -1,106 +1,94 @@
-# Publicação rápida — Rota Universitária
+# Publicação — API no Render e aplicativo único na Vercel/Expo
 
-O backend usa H2 em memória por padrão e cria a rota, van ABC-1234, estudantes e motorista automaticamente. Não execute o seed.sql. São três serviços: uma API e dois sites. A configuração costuma levar cerca de 10 minutos; o primeiro build pode levar mais.
+A arquitetura possui dois serviços: a API Java e o aplicativo Expo, que atende estudante e motorista. A versão de navegador é exportada pelo mesmo projeto usado no celular.
 
-## 1. Preparar o repositório
+## 1. Repositório
 
-Coloque esta pasta em um repositório GitHub acessível ao Render e à Vercel. Não inclua .env, node_modules, target, dist nem o backup antes-do-plano.zip. Este diretório local ainda não era um repositório Git durante a implementação.
+Disponibilize os fontes em um repositório acessível ao provedor escolhido. Este diretório local não contém um repositório Git inicializado. Exclua .env, node_modules, target, dist e arquivos de backup; o .gitignore já cobre esses arquivos.
 
 ## 2. Backend no Render
 
-1. No [Render](https://dashboard.render.com/), escolha **New → Web Service** e conecte o repositório.
-2. Use **Root Directory: backend**, **Language: Docker**, **Dockerfile Path: ./Dockerfile** e plano **Free**.
-3. Configure **Health Check Path: /api/health**. Pode manter as variáveis padrão para a banca.
-4. Publique e copie a URL HTTPS, por exemplo https://rota-universitaria-api.onrender.com.
-5. Abra a URL seguida de /api/health e aguarde a resposta {"status":"UP"}.
+1. Crie um Web Service a partir do repositório.
+2. Configure Root Directory **backend**, runtime **Docker** e Dockerfile **./Dockerfile**.
+3. Use Health Check Path **/api/health**.
+4. Para a banca, mantenha DEMO_ENABLED=true. O render.yaml da raiz oferece a configuração equivalente via Blueprint.
+5. Após publicar, copie a origem HTTPS e confira a resposta {"status":"UP"} em /api/health.
 
-Alternativa: **New → Blueprint** lê o render.yaml da raiz, já com a configuração acima.
-A API respeita PORT automaticamente. Nenhum PostgreSQL é necessário para a demonstração.
+A API respeita PORT. H2 é suficiente para demonstrar, mas perde os dados ao reiniciar. O serviço gratuito pode suspender por inatividade; abra a API antes da banca e confira os limites atuais na [documentação do Render](https://render.com/docs/free).
 
-## 3. Painel do motorista na Vercel
+## 3. App único na Vercel
 
-1. Em [Vercel](https://vercel.com/new), importe o mesmo repositório.
-2. Selecione **Root Directory: painel-web**, framework **Vite**.
-3. Cadastre **VITE_API_URL** com a URL HTTPS da API, sem /api e sem /api/checkin.
-4. Use **npm run build** e saída **dist**. O vercel.json já configura as rotas.
-5. Publique.
+1. Importe o repositório em um projeto da Vercel.
+2. Root Directory: **mobile**. Framework: **Other**.
+3. Installation Command: **npm ci**.
+4. Build Command: **npx expo export --platform web**.
+5. Output Directory: **dist**.
+6. Configure **EXPO_PUBLIC_API_URL** com a origem HTTPS da API, sem /api.
+7. Publique e teste a página inicial, /ajuda e /configuracoes. Contas de estudante e motorista entram no mesmo endereço.
 
-## 4. App para celular e navegador na Vercel
+O mobile/vercel.json configura o build, a saída e cleanUrls. O aplicativo usa web.output=static; cada rota tem seu HTML. Não é necessário criar um segundo site por perfil. Consulte [publicação web do Expo](https://docs.expo.dev/guides/publishing-websites/).
 
-1. Importe novamente o repositório como outro projeto.
-2. Selecione **Root Directory: mobile**, framework **Other**.
-3. Cadastre **EXPO_PUBLIC_API_URL** com a mesma URL HTTPS da API.
-4. Use **npx expo export --platform web**, saída **dist** e instalação **npm ci**.
-5. Publique. As rotas são exportadas como páginas estáticas; o vercel.json habilita cleanUrls.
+Use Node.js 22.13 ou posterior compatível com as dependências fixadas. A URL da API é incorporada ao build; faça uma nova publicação se ela mudar. Não use localhost na publicação.
 
-Use Node.js 22 ou posterior compatível com as dependências fixadas. Após alterar uma variável de frontend, faça novo deploy: ela é incorporada no build.
+## 4. Celular
 
-## 5. Teste para a banca
+Para Expo Go compatível com o SDK 57, execute npx expo start dentro de mobile e use uma API acessível ao telefone. Para instalação nativa, os perfis estão em mobile/eas.json; configure EXPO_PUBLIC_API_URL no ambiente do build.
 
-| Perfil | Usuário | Senha |
+NFC necessita do aplicativo compilado, permissões e hardware compatíveis. No navegador e no Expo Go, use QR Code ou simulação de demonstração. GPS, câmera, voz e vibração precisam de conferência em aparelho real.
+
+## 5. Roteiro da banca
+
+| Perfil | Login | Senha |
 | --- | --- | --- |
-| Estudante — Gabriel | 22009264 | demo-hash-22009264 |
-| Estudante — Ana | 22009265 | demo-hash-22009265 |
+| Gabriel | 22009264 | demo-hash-22009264 |
+| Ana | 22009265 | demo-hash-22009265 |
 | Motorista | motorista | motorista123 |
 
-1. Entre no painel como motorista e abra o app em outra aba ou celular.
-2. Entre como estudante. Toque **Simular leitura do QR Code (Demo)**: a ida aparece no painel.
-3. Aguarde os 10 segundos de proteção. Faça nova leitura para registrar a volta.
-4. Use Ana para demonstrar **Não voltarei no veículo hoje** ou **Dispensar Volta** no painel.
-5. Confira a contagem de faltantes. **Todos prontos** aparece apenas após alguma ida e nenhuma pendência.
-6. Ligue o GPS no painel web ou no painel mobile e permita a localização. No app do estudante, abra **Rastreio** e **Google Maps**.
-7. Use **Reiniciar Ciclo do Dia (Demo)** e confirme para repetir. Só o dia atual e o veículo selecionado são limpos.
+Código de credenciamento de demonstração: **FROTA-UNIPAM**. Veículo: **ABC-1234**.
 
-QR do veículo: conteúdo **ABC-1234**. Os QR antigos 22009264 e 22009265 continuam válidos para o respectivo aluno autenticado. NFC lê tags NDEF de texto em um aplicativo nativo compilado e aparelho compatível; não funciona no navegador ou Expo Go.
+1. Abra duas abas do mesmo aplicativo. Entre como motorista em uma e estudante em outra.
+2. No estudante, simule a primeira leitura. No motorista, confira a ida e um passageiro aguardado.
+3. Espere 10 segundos e simule novamente. Confira a volta e a carteirinha com histórico.
+4. Use Ana para demonstrar a dispensa de retorno. O motorista pode dispensar um aluno que já registrou ida.
+5. No motorista, marque uma parada e publique um aviso rápido. Na aba Minha linha do estudante, confira o marcador e o banner.
+6. Ative o GPS em aparelho compatível e permita a localização. No aluno, autorize sua localização para calcular distância e estimativa; abra o Google Maps se houver sinal recente.
+7. Exporte a chamada: download CSV no navegador, menu de compartilhamento no celular. No Excel, importe a coluna Matrícula como texto se precisar preservar zeros iniciais.
+8. Em Passageiros, cadastre um aluno fictício; entre com essa nova conta em outra aba.
+9. Na página inicial, use Criar conta para cadastrar outro motorista e uma nova rota. Cadastre um aluno nessa linha e confira que chamada e GPS não expõem outro veículo.
+10. Em Rota, altere a ordem das paradas; em Ajustes, demonstre escuro, alto contraste, fonte ampliada e toque facilitado. Recarregue para verificar a persistência das preferências.
+11. Use Reiniciar Ciclo do Dia (Demo) para repetir a apresentação. O histórico de outros dias fica preservado.
 
-## Limites da demonstração
+O QR do veículo contém sua placa, como ABC-1234. Os QR antigos com RA continuam válidos apenas para o aluno autenticado correspondente. A senha nunca deve ser impressa no código.
 
-- O [Render Free](https://render.com/docs/free) suspende serviços após 15 minutos sem tráfego. A retomada pode levar cerca de um minuto. Abra /api/health antes da apresentação.
-- O H2 em memória perde viagens ao reiniciar ou suspender a API; os cadastros de demonstração são recriados. Não use para guardar registros reais.
-- Sessões e GPS são mantidos em memória: um reinício exige novo login. Rode uma única instância da API.
-- Recarregar o site/app também exige login. As credenciais de sessão ficam só na memória do cliente.
-- GPS e câmera no navegador precisam de HTTPS (localhost é permitido). A transmissão funciona em primeiro plano; mantenha a página/app aberta e a tela ligada. O sinal expira no servidor após 30 segundos sem atualização.
-- O plano Free tem limites de uso; não há garantia de disponibilidade ou gratuidade ilimitada. O PostgreSQL gratuito do Render expira após 30 dias. Confira as condições vigentes antes da apresentação.
-- A transmissão simultânea por dois aparelhos usa o último sinal recebido. Prefira ligar em apenas um dispositivo.
+## 6. Variáveis do backend
 
-## PostgreSQL opcional
+| Variável | Padrão da demonstração | Uso |
+| --- | --- | --- |
+| DEMO_ENABLED | true | Seed dos alunos, simulação no app, dicas e reset diário |
+| DRIVER_PASSWORD | motorista123 | Senha da conta inicial, apenas quando ela ainda não existe |
+| FLEET_REGISTRATION_CODE | FROTA-UNIPAM | Código para novos motoristas |
+| CHECKIN_COOLDOWN_SECONDS | 10 | Proteção contra leitura duplicada; mínimo 3 |
+| PORT | 8080 | Porta HTTP |
+| SPRING_DATASOURCE_URL | H2 em memória | Conexão JDBC |
+| SPRING_DATASOURCE_USERNAME | sa | Usuário do banco |
+| SPRING_DATASOURCE_PASSWORD | vazio | Senha do banco |
 
-Configure no Render:
+Fora da demonstração, configure DEMO_ENABLED=false, DRIVER_PASSWORD própria e FLEET_REGISTRATION_CODE privado antes de criar o banco. A aplicação recusa os códigos padrão de motorista/frota nesse modo. Nunca coloque essas duas credenciais em variáveis EXPO_PUBLIC_*.
 
-```text
+DRIVER_PASSWORD não altera contas já existentes. Desativar o modo demo não remove exemplos já gravados em um banco persistente: use um banco limpo ao iniciar a operação real.
+
+## 7. PostgreSQL e limites operacionais
+
+~~~text
 SPRING_DATASOURCE_URL=jdbc:postgresql://HOST:5432/BANCO?sslmode=require
 SPRING_DATASOURCE_USERNAME=USUARIO
 SPRING_DATASOURCE_PASSWORD=SENHA
-```
+~~~
 
-Use o formato JDBC, não a URL postgres:// diretamente. O Hibernate detecta o banco e mantém os registros. Para uso fora da banca, configure DEMO_ENABLED=false e DRIVER_PASSWORD com senha própria antes da primeira inicialização do banco. Isso desativa o reset e a criação de estudantes de exemplo. DRIVER_PASSWORD só cria a conta inicial; não troca a senha de uma conta já existente. As telas ainda exibem dicas fixas de demonstração.
+Use JDBC, não a URL postgres:// diretamente. O Hibernate atualiza o esquema existente; faça backup de um banco com dados importantes antes do primeiro upgrade.
 
-CHECKIN_COOLDOWN_SECONDS controla o intervalo, com mínimo de 3 segundos. O padrão é 10. O dia de viagem segue America/Sao_Paulo, independentemente do fuso do servidor.
+Sessões e GPS ainda ficam na memória da API, mesmo com PostgreSQL: use uma única instância. Sessões duram até 12 horas e são perdidas no reinício. A posição vence em 30 segundos. O app consulta dados a cada 5 segundos, sem execução garantida em segundo plano. Ao fechar uma página sem desligar GPS, a expiração evita mostrar indefinidamente o último sinal.
 
-## Rodar localmente
+Avisos duram até 12 horas e pertencem à rota; paradas manuais expiram na virada do dia de Brasília. A distância usa linha reta e o tempo é apenas uma referência de deslocamento, sem previsão de trânsito ou sentido do ônibus.
 
-Backend (Java 17):
-
-```powershell
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-
-Em dois terminais adicionais:
-
-```powershell
-cd painel-web
-npm ci
-npm run dev
-```
-
-```powershell
-cd mobile
-npm ci
-npx expo start --web
-```
-
-Copie .env.example para .env em cada frontend. No navegador do computador use http://localhost:8080; no celular físico use o IP local do computador ou a API HTTPS. A normalização remove barras finais e sufixos acidentais /api ou /api/checkin.
-
-Referências: [Vite na Vercel](https://vercel.com/docs/frameworks/frontend/vite), [Exportação web do Expo](https://docs.expo.dev/guides/publishing-websites/).
-
+A integração local foi validada com H2. PostgreSQL, Docker, publicação nos provedores e hardware móvel não foram homologados nesta execução.

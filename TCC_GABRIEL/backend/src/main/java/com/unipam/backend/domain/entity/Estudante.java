@@ -10,6 +10,14 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "tb_estudante")
 public class Estudante {
+    @Column(length = 120)
+    private String curso;
+    @jakarta.persistence.ManyToOne
+    private Veiculo veiculo;
+    public String getCurso() { return curso; }
+    public void setCurso(String value) { curso = value; }
+    public Veiculo getVeiculo() { return veiculo; }
+    public void setVeiculo(Veiculo value) { veiculo = value; }
 
     public Long getId() {
         return id;

@@ -1,266 +1,97 @@
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import * as Location from 'expo-location';
+import { useIsFocused } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccessibilityInfo, Animated, Linking, Text, View } from 'react-native';
+import { AvisoBanner, Botao, Card, Header, Page, useUI } from '@/components/ui';
+import { buscarLocalizacao, hora, mensagemDeErro, type Localizacao } from '@/services/api';
+import { usePerfil } from '@/services/perfil';
+import { useSettings } from '@/services/settings';
+import { estimarMinutos, haversine } from '@/services/geo';
 
-import { useToast } from '@/components/toast';
-import { Colors, MIN_TOUCH, Radius, Spacing, Typography } from '@/constants/theme';
-import { buscarLocalizacao, mensagemDeErro, PLACA_VEICULO, type Localizacao } from '@/services/api';
-import { isAxiosError } from 'axios';
-
-const INTERVALO_POLLING_MS = 5000;
-
-export default function MapaScreen() {
-  const [localizacao, setLocalizacao] = useState<Localizacao | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const mostrarToast = useToast();
-
-  // Short polling: consulta a posição da van a cada 5 segundos
+function Pulso() {
+  const { colors: c } = useSettings(); const [opacity] = useState(() => new Animated.Value(1));
   useEffect(() => {
-    const buscarGPS = () => {
-      buscarLocalizacao(PLACA_VEICULO)
-        .then((loc) => {
-          setLocalizacao(loc);
-          setErro(null);
-        })
-        .catch((e: unknown) => {
-          setLocalizacao(null);
-          setErro(isAxiosError(e) && e.response?.status === 404 ? 'Aguardando transmissão do motorista...' : mensagemDeErro(e, 'Falha ao consultar a localização.'));
-        });
+    let anim: Animated.CompositeAnimation | undefined; let vivo = true;
+    const configurar = (reduzir: boolean) => {
+      anim?.stop(); opacity.setValue(1);
+      if (!reduzir && vivo) { anim = Animated.loop(Animated.sequence([Animated.timing(opacity, { toValue: .35, duration: 800, useNativeDriver: true }), Animated.timing(opacity, { toValue: 1, duration: 800, useNativeDriver: true })])); anim.start(); }
     };
-
-    buscarGPS();
-    const intervalo = setInterval(buscarGPS, INTERVALO_POLLING_MS);
-    return () => clearInterval(intervalo);
-  }, []);
-
-  // Abre as coordenadas diretamente no aplicativo de mapas do celular
-  const abrirNoGoogleMaps = () => {
-    if (!localizacao) return;
-    const url = `https://www.google.com/maps/search/?api=1&query=${localizacao.latitude},${localizacao.longitude}`;
-    Linking.openURL(url).catch(() => {
-      mostrarToast('erro', 'Não foi possível abrir o mapa', 'Verifique se há um aplicativo de mapas instalado.');
-    });
-  };
-
-  return (
-    <SafeAreaView edges={['top']} style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={Typography.title} accessibilityRole="header">Rastreio da Van</Text>
-          <View style={styles.chipPlaca}>
-            <MaterialIcons name="directions-bus" size={16} color={Colors.primary} />
-            <Text style={styles.textoPlaca}>Placa {PLACA_VEICULO}</Text>
-          </View>
-        </View>
-
-        <View style={styles.card} accessibilityLiveRegion="polite">
-          {erro ? (
-            <EstadoVazio
-              icone="satellite-alt"
-              cor={Colors.dangerText}
-              titulo="Van offline"
-              descricao={erro}
-            />
-          ) : localizacao ? (
-            <View style={styles.infoContainer}>
-              <View style={styles.statusLinha}>
-                <IconePulsante />
-                <View style={styles.statusTextos}>
-                  <Text style={styles.statusTitulo}>Localização da van disponível</Text>
-                  <Text style={Typography.caption}>Atualizado em tempo real (a cada 5s)</Text>
-                </View>
-              </View>
-
-              <View style={styles.coordenadas}>
-                <Coordenada rotulo="Latitude" valor={localizacao.latitude} />
-                <View style={styles.divisor} />
-                <Coordenada rotulo="Longitude" valor={localizacao.longitude} />
-              </View>
-
-              <Pressable
-                style={({ pressed }) => [styles.botaoMapa, pressed && styles.botaoPressionado]}
-                onPress={abrirNoGoogleMaps}
-                accessibilityRole="button"
-                accessibilityLabel="Abrir rota atual no aplicativo do Google Maps">
-                <MaterialIcons name="map" size={22} color={Colors.onPrimary} />
-                <Text style={Typography.button}>Abrir no Google Maps</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <EstadoVazio
-              icone="gps-not-fixed"
-              cor={Colors.primary}
-              titulo="Conectando ao satélite..."
-              descricao="Buscando a posição atual da van."
-              carregando
-            />
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+    void AccessibilityInfo.isReduceMotionEnabled().then(configurar);
+    const listener = AccessibilityInfo.addEventListener('reduceMotionChanged', configurar);
+    return () => { vivo = false; anim?.stop(); listener.remove(); };
+  }, [opacity]);
+  return <Animated.View accessible={false} style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: c.primary, opacity }} />;
 }
-
-function Coordenada({ rotulo, valor }: { rotulo: string; valor: number }) {
-  return (
-    <View style={styles.coordenada} accessible accessibilityLabel={`${rotulo}: ${valor.toFixed(5)}`}>
-      <Text style={Typography.caption}>{rotulo}</Text>
-      <Text style={styles.coordenadaValor}>{valor.toFixed(5)}</Text>
-    </View>
-  );
-}
-
-/** Ícone verde com um anel que pulsa continuamente, indicando transmissão ativa. */
-function IconePulsante() {
-  const progresso = useSharedValue(0);
-  const reduzirMovimento = useReducedMotion();
-
+export default function Mapa() {
+  const ui = useUI(); const { colors: c } = useSettings(); const { perfil } = usePerfil(); const linha = perfil?.linha;
+  const [gps, setGps] = useState<Localizacao | null>(null); const [erro, setErro] = useState('');
+  const [minhaPosicao, setMinhaPosicao] = useState<Location.LocationObject | null>(null);
+  const [autorizado, setAutorizado] = useState(false); const [solicitando, setSolicitando] = useState(false);
+  const [erroAluno, setErroAluno] = useState(''); const [agora, setAgora] = useState(() => Date.now());
+  const foco = useIsFocused();
   useEffect(() => {
-    if (reduzirMovimento) return;
-    progresso.value = withRepeat(withTiming(1, { duration: 1600, easing: Easing.out(Easing.ease) }), -1, false);
-  }, [progresso, reduzirMovimento]);
-
-  const anelStyle = useAnimatedStyle(() => ({
-    opacity: 0.5 * (1 - progresso.value),
-    transform: [{ scale: 1 + progresso.value * 0.8 }],
-  }));
-
-  return (
-    <View style={styles.pulsoContainer} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <Animated.View style={[styles.pulsoAnel, anelStyle]} />
-      <View style={styles.pulsoIcone}>
-        <MaterialIcons name="directions-bus" size={26} color={Colors.onPrimary} />
-      </View>
-    </View>
-  );
+    if (!linha?.placa || !foco) return;
+    let ativo = true, ocupado = false;
+    const carregar = async () => {
+      if (ocupado) return; ocupado = true;
+      try { const p = await buscarLocalizacao(linha.placa!); if (ativo) { setGps(p); setErro(''); } }
+      catch (e) { if (ativo) { setGps(null); setErro(mensagemDeErro(e, 'Sinal do veículo indisponível.')); } }
+      finally { ocupado = false; }
+    };
+    void carregar(); const timer = setInterval(carregar, 5000); const t = setInterval(() => setAgora(Date.now()), 1000);
+    return () => { ativo = false; clearInterval(timer); clearInterval(t); };
+  }, [linha?.placa, foco]);
+  useEffect(() => {
+    if (!autorizado || !foco) return;
+    let ativo = true, ocupado = false;
+    const atualizar = async () => {
+      if (ocupado) return; ocupado = true;
+      try {
+        const p = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        if (ativo) { if ((p.coords.accuracy ?? Infinity) <= 100) { setMinhaPosicao(p); setErroAluno(''); } else setErroAluno('Sua localização está imprecisa. Tente em uma área aberta.'); }
+      } catch { if (ativo) setErroAluno('Não foi possível obter sua posição. Confira a permissão de localização.'); }
+      finally { ocupado = false; }
+    };
+    void atualizar(); const timer = setInterval(atualizar, 10000);
+    return () => { ativo = false; clearInterval(timer); };
+  }, [autorizado, foco]);
+  async function ativar() {
+    setSolicitando(true); setErroAluno('');
+    try {
+      const p = await Location.requestForegroundPermissionsAsync();
+      if (p.granted) setAutorizado(true); else setErroAluno('Permita sua localização nas configurações do aparelho para calcular a distância.');
+    } catch { setErroAluno('Localização indisponível neste dispositivo.'); } finally { setSolicitando(false); }
+  }
+  const sinal = gps && agora - Date.parse(gps.ultimaAtualizacao) < 30000 ? gps : null;
+  const posAluno = minhaPosicao && agora - minhaPosicao.timestamp < 60000 && autorizado ? minhaPosicao : null;
+  const distancia = sinal && posAluno ? haversine(posAluno.coords, sinal) : null;
+  const abrirMapa = () => { if (sinal) void Linking.openURL('https://www.google.com/maps/dir/?api=1&destination=' + sinal.latitude + ',' + sinal.longitude).catch(() => setErro('Não foi possível abrir o Google Maps.')); };
+  return <Page><Header title="Minha linha" subtitle="DO SEU PONTO ATÉ A FACULDADE" /><AvisoBanner />
+    <Card><Text style={ui.subtitle}>{linha?.nome || 'Carregando sua linha…'}</Text><Text style={ui.body}>{linha?.placa || '—'} · {linha?.motorista || 'Motorista não informado'}</Text>
+      <Text style={sinal ? ui.success : ui.warning} accessibilityLiveRegion="polite">{sinal ? sinal.velocidadeKmh >= 3 ? '➜ Em movimento · ' + sinal.velocidadeKmh + ' km/h' : '◉ Veículo parado' : '◷ Sem sinal GPS recente'}</Text>
+      <Text style={ui.label}>{sinal ? 'Última posição: ' + hora(sinal.ultimaAtualizacao) + (sinal.precisaoMetros === null ? ' · precisão não informada' : ' · precisão ±' + Math.round(sinal.precisaoMetros) + ' m') : erro || 'O motorista pode ativar o GPS no aplicativo.'}</Text>
+    </Card>
+    <Card><Text style={ui.label}>ÔNIBUS PERTO DE VOCÊ</Text>
+      {distancia !== null && sinal ? <><Text style={ui.metric}>{distancia.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} km</Text>
+        <Text style={ui.subtitle}>Aprox. {estimarMinutos(distancia, sinal.velocidadeKmh)} min de deslocamento</Text>
+        <Text style={ui.label}>Estimativa em linha reta, usando {sinal.velocidadeKmh >= 5 ? 'a velocidade atual' : '30 km/h como referência'}. Não considera ruas, sentido da viagem, paradas ou trânsito; não confirma a chegada ao seu ponto.</Text></>
+        : <Text style={ui.body}>{autorizado ? 'Aguardando posições recentes do ônibus e do seu aparelho.' : 'Ative sua localização para estimar a distância até o ônibus. Sua posição permanece neste aparelho.'}</Text>}
+      {erroAluno ? <Text style={ui.error}>{erroAluno}</Text> : null}
+      <Botao secondary icon={autorizado ? 'location-off' : 'my-location'} busy={solicitando} onPress={() => { if (autorizado) { setAutorizado(false); setMinhaPosicao(null); } else void ativar(); }}>{autorizado ? 'Desligar minha localização' : 'Calcular distância até mim'}</Botao>
+      <Botao icon="map" disabled={!sinal} onPress={abrirMapa}>Abrir trajeto no Google Maps</Botao>
+    </Card>
+    <Card><Text style={ui.subtitle}>Paradas da linha</Text>
+      <Text style={ui.label}>{linha && linha.paradaAtual >= 0 ? 'Atualização manual do motorista · ' + hora(linha.paradaAtualizadaEm) : 'Aguardando o motorista indicar a parada atual.'}</Text>
+      {linha?.paradas.map((parada, i) => {
+        const atual = i === linha.paradaAtual; const passou = i < linha.paradaAtual;
+        return <View key={i} style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ width: 36, alignItems: 'center' }}><View style={{ width: 34, height: 34, borderRadius: 17, borderWidth: 2, borderColor: atual || passou ? c.primary : c.border, alignItems: 'center', justifyContent: 'center' }}>
+            {atual ? <Pulso /> : <Text style={[ui.label, { color: passou ? c.primary : c.muted }]}>{passou ? '✓' : i + 1}</Text>}</View>
+            {i < linha.paradas.length - 1 && <View style={{ flex: 1, minHeight: 22, width: 2, backgroundColor: passou ? c.primary : c.border }} />}</View>
+          <View style={{ flex: 1, paddingBottom: 16, gap: 4 }}><Text style={ui.subtitle}>{parada}</Text><Text style={atual ? ui.success : ui.label}>{atual ? '◉ Parada atual informada' : passou ? '✓ Já percorrida' : '◷ Próxima parada'}</Text></View>
+        </View>;
+      })}
+      <Text style={ui.label}>As paradas seguem a ordem configurada até a faculdade. O marcador manual não confirma a posição GPS.</Text>
+    </Card>
+  </Page>;
 }
-
-function EstadoVazio({
-  icone,
-  cor,
-  titulo,
-  descricao,
-  carregando = false,
-}: {
-  icone: keyof typeof MaterialIcons.glyphMap;
-  cor: string;
-  titulo: string;
-  descricao: string;
-  carregando?: boolean;
-}) {
-  return (
-    <View style={styles.estadoVazio}>
-      <View style={[styles.estadoVazioIcone, { backgroundColor: `${cor}1A` }]}>
-        <MaterialIcons name={icone} size={40} color={cor} />
-      </View>
-      <Text style={[Typography.subtitle, styles.centro]}>{titulo}</Text>
-      <Text style={[styles.estadoVazioDescricao, styles.centro]}>{descricao}</Text>
-      {carregando && <ActivityIndicator style={styles.loader} color={cor} />}
-    </View>
-  );
-}
-
-const TAMANHO_PULSO = 56;
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.background },
-  container: {
-    flexGrow: 1,
-    padding: Spacing.lg - 4,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-    gap: Spacing.sm,
-  },
-  chipPlaca: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs + 2,
-    backgroundColor: '#E5F0FF',
-    paddingHorizontal: Spacing.md - 4,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: Radius.pill,
-  },
-  textoPlaca: { color: Colors.primaryPressed, fontSize: 14, fontWeight: '600' },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg + 4,
-    padding: Spacing.lg,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-    minHeight: 280,
-    justifyContent: 'center',
-  },
-  infoContainer: { gap: Spacing.lg - 4 },
-  statusLinha: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  statusTextos: { flex: 1 },
-  statusTitulo: { fontSize: 18, fontWeight: '700', color: Colors.successText },
-  pulsoContainer: {
-    width: TAMANHO_PULSO,
-    height: TAMANHO_PULSO,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pulsoAnel: {
-    position: 'absolute',
-    width: TAMANHO_PULSO,
-    height: TAMANHO_PULSO,
-    borderRadius: TAMANHO_PULSO / 2,
-    backgroundColor: Colors.success,
-  },
-  pulsoIcone: {
-    width: TAMANHO_PULSO,
-    height: TAMANHO_PULSO,
-    borderRadius: TAMANHO_PULSO / 2,
-    backgroundColor: Colors.success,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coordenadas: {
-    flexDirection: 'row',
-    backgroundColor: Colors.background,
-    borderRadius: Radius.md,
-    paddingVertical: Spacing.md - 2,
-  },
-  coordenada: { flex: 1, alignItems: 'center', gap: 2 },
-  coordenadaValor: { fontSize: 18, fontWeight: '600', fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }), color: Colors.text },
-  divisor: { width: 1, backgroundColor: Colors.border },
-  botaoMapa: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    minHeight: 54,
-    minWidth: MIN_TOUCH,
-    backgroundColor: Colors.primary,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-  },
-  botaoPressionado: { backgroundColor: Colors.primaryPressed },
-  estadoVazio: { alignItems: 'center' },
-  estadoVazioIcone: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.md,
-  },
-  estadoVazioDescricao: { ...Typography.body, color: Colors.textSecondary, marginTop: Spacing.xs },
-  loader: { marginTop: Spacing.md },
-  centro: { textAlign: 'center' },
-});

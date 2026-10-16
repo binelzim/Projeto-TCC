@@ -1,47 +1,46 @@
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
 import { useIsFocused } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, Text, View, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Botao, Card, ui } from '@/components/ui';
+import { Text, View, StyleSheet } from 'react-native';
+import { AvisoBanner, Botao, Card, Header, Page, useUI } from '@/components/ui';
 import { useAuth } from '@/services/auth';
-import { buscarMeuDia, dispensarVolta, mensagemDeErro, PLACA_VEICULO, realizarCheckIn, type Passageiro, type MetodoValidacao } from '@/services/api';
+import { usePerfil } from '@/services/perfil';
+import { useSettings } from '@/services/settings';
+import { buscarConfig, buscarMeuDia, dispensarVolta, hora, mensagemDeErro, realizarCheckIn, type Passageiro, type MetodoValidacao } from '@/services/api';
 import { lerNfc, cancelarNfc } from '@/services/nfc';
 
 export default function Scanner() {
-  const { sessao, sair } = useAuth();
+  const ui = useUI(); const { sessao } = useAuth(); const { perfil } = usePerfil(); const { announce, vibrate } = useSettings();
+  const placa = perfil?.linha.placa;
   const [permissao, pedirPermissao] = useCameraPermissions();
-  const [dia, setDia] = useState<Passageiro | null>(null);
-  const [carregado, setCarregado] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [camera, setCamera] = useState(false);
-  const [mensagem, setMensagem] = useState('');
-  const [erro, setErro] = useState('');
-  const [confirmarDispensa, setConfirmarDispensa] = useState(false);
-  const [agora, setAgora] = useState(() => Date.now());
-  const trava = useRef(false);
-  const foco = useIsFocused();
+  const [dia, setDia] = useState<Passageiro | null>(null); const [carregado, setCarregado] = useState(false);
+  const [busy, setBusy] = useState(false); const [camera, setCamera] = useState(false); const [demo, setDemo] = useState(false);
+  const [mensagem, setMensagem] = useState(''); const [erro, setErro] = useState('');
+  const [confirmarDispensa, setConfirmarDispensa] = useState(false); const [agora, setAgora] = useState(() => Date.now());
+  const trava = useRef(false); const foco = useIsFocused();
+  useEffect(() => { void buscarConfig().then(r => setDemo(r.demoEnabled)).catch(() => {}); }, []);
   useEffect(() => {
     if (!foco) return;
     let ativo = true;
     const atualizar = async () => {
       if (trava.current) return;
-      try { const d = await buscarMeuDia(); if (ativo && !trava.current) { setDia(d); setCarregado(true); setErro(''); } }
+      try { const d = await buscarMeuDia(); if (ativo && !trava.current) { setDia(d); setCarregado(true); } }
       catch (e) { if (ativo) setErro(mensagemDeErro(e, 'Não foi possível atualizar seu dia.')); }
     };
-    void atualizar();
-    const timer = setInterval(atualizar, 5000);
+    void atualizar(); const timer = setInterval(atualizar, 5000);
     const relogio = setInterval(() => setAgora(Date.now()), 1000);
-    return () => { ativo = false; clearInterval(timer); clearInterval(relogio); void cancelarNfc(); };
+    return () => { ativo = false; clearInterval(timer); clearInterval(relogio); setCamera(false); void cancelarNfc(); };
   }, [foco]);
   const espera = dia?.status === 'NA_FACULDADE' ? Math.max(0, Math.ceil((Date.parse(dia.proximaLeituraEm) - agora) / 1000)) : 0;
   const concluido = dia?.status === 'EMBARCADO_VOLTA' || dia?.status === 'VOLTA_DISPENSADA';
   const registrar = async (token: string, metodo: MetodoValidacao = 'QR_CODE') => {
-    if (trava.current) return;
+    if (trava.current || !placa) return;
     trava.current = true; setBusy(true); setCamera(false); setErro(''); setMensagem('');
     try {
-      const resultado = await realizarCheckIn({ tokenIdentificador: token.trim(), placaVeiculo: PLACA_VEICULO, metodo });
+      const resultado = await realizarCheckIn({ tokenIdentificador: token.trim(), placaVeiculo: placa, metodo });
       setDia(resultado); setCarregado(true); setAgora(Date.now());
+      const texto = 'Embarque de ' + (resultado.status === 'NA_FACULDADE' ? 'ida' : 'volta') + ' confirmado para ' + sessao?.nome + '.';
+      setMensagem(texto); announce(texto); vibrate();
     } catch (e) { setErro(mensagemDeErro(e, 'Não foi possível registrar o embarque.')); }
     finally { trava.current = false; setBusy(false); }
   };
@@ -50,61 +49,47 @@ export default function Scanner() {
     try {
       const resultado = permissao?.granted ? permissao : await pedirPermissao();
       if (resultado.granted) setCamera(true);
-      else setErro('Câmera não autorizada. Libere o acesso nas configurações ou use a simulação abaixo.');
-    } catch { setErro('Câmera indisponível. Você pode usar a simulação de leitura.'); }
+      else setErro('Câmera não autorizada. Libere o acesso nas configurações do aparelho ou consulte o motorista.');
+    } catch { setErro('Câmera indisponível. Consulte a Central de Ajuda.'); }
   };
   const nfc = async () => {
     setBusy(true); setErro('');
-    try { const token = await lerNfc(); await registrar(token, 'NFC'); }
-    catch (e) { setErro(e instanceof Error ? e.message : 'Não foi possível ler a tag NFC.'); }
-    finally { setBusy(false); }
+    try { await registrar(await lerNfc(), 'NFC'); }
+    catch (e) { setErro(e instanceof Error ? e.message : 'Não foi possível ler a tag NFC.'); } finally { setBusy(false); }
   };
   const dispensar = async () => {
     setBusy(true); trava.current = true; setErro('');
-    try { setDia(await dispensarVolta()); setMensagem('Volta dispensada. O motorista já foi avisado no painel.'); }
+    try { setDia(await dispensarVolta()); const texto = 'Volta dispensada. O motorista já vê sua decisão no painel.'; setMensagem(texto); announce(texto); }
     catch (e) { setErro(mensagemDeErro(e, 'Não foi possível dispensar a volta.')); }
     finally { setBusy(false); trava.current = false; setConfirmarDispensa(false); }
   };
-  return <SafeAreaView edges={['top']} style={ui.safe}><ScrollView contentContainerStyle={ui.content}>
-    <View style={ui.row}><View style={{ flex: 1 }}><Text style={ui.label}>SUA VIAGEM DE HOJE</Text>
-      <Text style={ui.title}>Olá, {sessao?.nome.split(' ')[0]}</Text></View><Botao secondary onPress={() => { void sair(); }}>Sair</Botao></View>
-    <Card>
-      <Text style={ui.label}>Lagoa Formosa ↔ UNIPAM · {PLACA_VEICULO}</Text>
-      <Text style={ui.subtitle} accessibilityLiveRegion="polite">{!carregado ? 'Consultando seu dia…' :
-        !dia ? 'Sem embarque hoje' : dia.status === 'NA_FACULDADE' ? 'Ida confirmada — bom estudo!' :
-          dia.status === 'EMBARCADO_VOLTA' ? 'Volta confirmada — boa viagem!' : 'Volta dispensada'}</Text>
-      <Text style={ui.body}>{!dia ? 'Faça a primeira leitura ao entrar no veículo.' : dia.status === 'NA_FACULDADE' ?
-        'Na faculdade, basta desembarcar. Faça uma nova leitura apenas quando entrar no veículo para voltar.' :
-        dia.status === 'VOLTA_DISPENSADA' ? 'Você não está na lista de estudantes aguardados para o retorno.' : 'Você está a bordo para o retorno. Até a próxima viagem!'}</Text>
-      {espera > 0 ? <Text style={ui.label}>Proteção contra leitura repetida: {espera}s</Text> : null}
+  const bloqueado = busy || !carregado || !placa || espera > 0;
+  return <Page><Header title={'Olá, ' + (sessao?.nome.split(' ')[0] || 'estudante')} subtitle="SUA VIAGEM DE HOJE" /><AvisoBanner />
+    <Card><Text style={ui.label}>{perfil?.linha.nome || 'Carregando sua linha…'} · {placa || '—'}</Text>
+      <Text style={ui.subtitle} accessibilityLiveRegion="polite">{!carregado ? 'Consultando seu dia…' : !dia ? '◷ Pronto para embarcar?' : dia.status === 'NA_FACULDADE' ? '✓ Ida confirmada. Bom estudo!' : dia.status === 'EMBARCADO_VOLTA' ? '✓ Volta confirmada. Boa viagem!' : '↗ Volta dispensada'}</Text>
+      <Text style={ui.body}>{!dia ? 'Faça a primeira leitura ao entrar no veículo.' : dia.status === 'NA_FACULDADE' ? 'Na faculdade, basta desembarcar. Leia novamente apenas quando entrar no veículo para voltar.' : dia.status === 'VOLTA_DISPENSADA' ? 'O motorista não precisa aguardar você para o retorno.' : 'Você está a bordo para o retorno. Até a próxima viagem!'}</Text>
+      <View style={ui.row}><Text style={ui.label}>IDA · {hora(dia?.ida || null)}</Text><Text style={ui.label}>VOLTA · {hora(dia?.volta || null)}</Text></View>
+      {espera > 0 && <Text style={ui.label}>Proteção contra leitura repetida: {espera}s</Text>}
     </Card>
     {mensagem ? <Text accessibilityLiveRegion="polite" style={ui.success}>{mensagem}</Text> : null}
-    {erro ? <Text accessibilityLiveRegion="polite" style={ui.error}>{erro}</Text> : null}
-    {!concluido && <Card>
-      <Text style={ui.subtitle}>{dia ? 'Embarque de volta' : 'Embarque de ida'}</Text>
+    {erro ? <Text accessibilityLiveRegion="polite" style={ui.error}>⚠ {erro}</Text> : null}
+    {!concluido && <Card><Text style={ui.subtitle}>{dia ? 'Embarque de volta' : 'Embarque de ida'}</Text>
       {camera && foco && permissao?.granted ? <>
-        <View style={{ height: 270, overflow: 'hidden', borderRadius: 12 }}>
-          <CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={busy ? undefined : ({ data }: BarcodeScanningResult) => { void registrar(data); }}
-            accessibilityLabel="Câmera para ler o QR Code do veículo" />
-        </View>
+        <View style={{ height: 270, overflow: 'hidden', borderRadius: 12 }}><CameraView style={StyleSheet.absoluteFill} barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+          onBarcodeScanned={busy ? undefined : ({ data }: BarcodeScanningResult) => { void registrar(data); }} accessibilityLabel="Câmera para ler o QR Code do veículo" /></View>
         <Text style={ui.body}>Aponte para o QR Code. A câmera fecha após uma leitura.</Text>
-        <Botao secondary onPress={() => setCamera(false)}>Fechar câmera</Botao>
-      </> : <Botao onPress={() => { void abrirCamera(); }} disabled={busy || !carregado || espera > 0}>Ler QR Code</Botao>}
-      <Botao secondary disabled={busy || !carregado || espera > 0} onPress={() => { void registrar(PLACA_VEICULO); }}>
-        {busy ? 'Aguarde…' : 'Simular leitura do QR Code (Demo)'}
-      </Botao>
-      <Botao secondary disabled={busy || !carregado || espera > 0} onPress={() => { void nfc(); }}>Ler carteirinha NFC</Botao>
-      <Text style={ui.label}>A simulação registra um embarque real na demonstração e funciona sem câmera.</Text>
+        <Botao secondary icon="close" onPress={() => setCamera(false)}>Fechar câmera</Botao>
+      </> : <Botao icon="qr-code-scanner" onPress={() => { void abrirCamera(); }} disabled={bloqueado}>Ler QR Code</Botao>}
+      <Botao secondary icon="contactless" disabled={bloqueado} onPress={() => { void nfc(); }}>Ler carteirinha NFC</Botao>
+      {demo && <><Botao secondary icon="science" disabled={bloqueado} onPress={() => { if (placa) void registrar(placa); }}>Simular leitura do QR Code (Demo)</Botao>
+        <Text style={ui.label}>A simulação registra um embarque na demonstração e funciona sem câmera.</Text></>}
     </Card>}
-    {dia?.status === 'NA_FACULDADE' && <Card>
-      <Text style={ui.subtitle}>Vai voltar de carona?</Text>
-      {!confirmarDispensa ? <Botao secondary disabled={busy} onPress={() => setConfirmarDispensa(true)}>Não voltarei no veículo hoje (Peguei carona)</Botao> : <>
+    {dia?.status === 'NA_FACULDADE' && <Card><Text style={ui.subtitle}>Vai voltar de carona?</Text>
+      {!confirmarDispensa ? <Botao secondary icon="directions-car" disabled={busy} onPress={() => setConfirmarDispensa(true)}>Não volto hoje / Peguei carona</Botao> : <>
         <Text style={ui.body}>Confirma que o motorista não precisa aguardar você hoje?</Text>
-        <Botao disabled={busy} onPress={() => { void dispensar(); }}>Confirmar dispensa da volta</Botao>
-        <Botao secondary disabled={busy} onPress={() => setConfirmarDispensa(false)}>Cancelar</Botao>
+        <Botao icon="check" disabled={busy} onPress={() => { void dispensar(); }}>Confirmar dispensa da volta</Botao>
+        <Botao secondary icon="close" disabled={busy} onPress={() => setConfirmarDispensa(false)}>Cancelar</Botao>
       </>}
     </Card>}
-  </ScrollView></SafeAreaView>;
+  </Page>;
 }
-

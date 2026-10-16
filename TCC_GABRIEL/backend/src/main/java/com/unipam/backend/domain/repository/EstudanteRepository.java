@@ -8,6 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface EstudanteRepository extends JpaRepository<Estudante, Long> {
+    java.util.List<Estudante> findByVeiculoRotaAtualIdOrderByNomeCompletoAsc(Long id);
     
     Optional<Estudante> findByMatricula(String matricula);
     

@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { aoExpirarSessao, definirSessao, login, logout, type Sessao } from './api';
 
 const AuthContext = createContext<{
-  sessao: Sessao | null; entrar: (usuario: string, senha: string) => Promise<void>; sair: () => Promise<void>;
-}>({ sessao: null, entrar: async () => {}, sair: async () => {} });
+  sessao: Sessao | null; entrar: (usuario: string, senha: string) => Promise<void>; sair: () => Promise<void>; adotar: (sessao: Sessao) => void;
+}>({ sessao: null, entrar: async () => {}, sair: async () => {}, adotar: () => {} });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [sessao, setSessao] = useState<Sessao | null>(null);
@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await logout(); } catch { /* A sessão local é encerrada mesmo sem rede. */ }
     finally { setSessao(null); }
   };
-  return <AuthContext.Provider value={{ sessao, entrar, sair }}>{children}</AuthContext.Provider>;
+  const adotar = (session: Sessao) => { definirSessao(session); setSessao(session); };
+  return <AuthContext.Provider value={{ sessao, entrar, sair, adotar }}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => useContext(AuthContext);
-

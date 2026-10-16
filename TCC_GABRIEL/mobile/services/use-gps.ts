@@ -1,40 +1,44 @@
 import * as Location from 'expo-location';
-import { useEffect, useState } from 'react';
-import { enviarLocalizacao, mensagemDeErro, pararLocalizacao, PLACA_VEICULO } from './api';
+import { useEffect, useRef, useState } from 'react';
+import { enviarLocalizacao, mensagemDeErro, pararLocalizacao } from './api';
+import { filtrarGps, type PosicaoFiltrada } from './geo';
 
-export function useGps(ligado: boolean) {
-  const [status, setStatus] = useState('GPS desligado');
+export function useGps(ligado: boolean, placa?: string | null, paradaAtual = -1) {
+  const [status, setStatus] = useState('Transmissão desligada.');
+  const parada = useRef(paradaAtual);
+  useEffect(() => { parada.current = paradaAtual; }, [paradaAtual]);
   useEffect(() => {
-    if (!ligado) return;
-    let ativo = true;
-    let busy = false;
+    if (!ligado || !placa) { setStatus('Transmissão desligada.'); return; }
+    let cancelado = false, ocupado = false;
+    let anterior: PosicaoFiltrada | null = null;
     let timer: ReturnType<typeof setInterval> | undefined;
     let envio: Promise<void> = Promise.resolve();
-    const transmitir = async () => {
-      if (!ativo || busy) return;
-      busy = true;
+    const capturar = async () => {
+      if (ocupado || cancelado) return;
+      ocupado = true;
       try {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-        if (!ativo) return;
-        envio = enviarLocalizacao(PLACA_VEICULO, pos.coords.latitude, pos.coords.longitude);
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.BestForNavigation });
+        if (cancelado) return;
+        const filtrada = filtrarGps({ ...pos.coords, accuracy: pos.coords.accuracy ?? 101, speed: pos.coords.speed, timestamp: pos.timestamp }, anterior);
+        if (!filtrada) { setStatus('Sinal impreciso. Aguardando uma leitura GPS confiável.'); return; }
+        anterior = filtrada;
+        envio = enviarLocalizacao(placa, filtrada.latitude, filtrada.longitude, filtrada.velocidadeKmh, filtrada.accuracy, parada.current);
         await envio;
-        if (ativo) setStatus('GPS ativo · localização enviada às ' + new Date().toLocaleTimeString('pt-BR'));
-      } catch (e) {
-        if (ativo) setStatus(mensagemDeErro(e, 'Sem sinal de GPS. Confira a permissão de localização e tente ao ar livre.'));
-      } finally { busy = false; }
+        if (!cancelado) setStatus('● GPS transmitindo · ' + filtrada.velocidadeKmh + ' km/h · precisão ±' + Math.round(filtrada.accuracy) + ' m');
+      } catch (e) { if (!cancelado) setStatus(mensagemDeErro(e, 'GPS indisponível. Confira a permissão e o sinal do aparelho.')); }
+      finally { ocupado = false; }
     };
     const iniciar = async () => {
-      setStatus('Aguardando permissão e sinal de GPS…');
+      setStatus('Solicitando acesso à localização…');
       try {
-        const { status: permissao } = await Location.requestForegroundPermissionsAsync();
-        if (!ativo) return;
-        if (permissao !== 'granted') { setStatus('Localização não autorizada. Libere a permissão e ligue o GPS novamente.'); return; }
-        void transmitir(); timer = setInterval(transmitir, 5000);
-      } catch { if (ativo) setStatus('Não foi possível acessar o GPS deste dispositivo.'); }
+        const permission = await Location.requestForegroundPermissionsAsync();
+        if (cancelado) return;
+        if (!permission.granted) { setStatus('Localização não autorizada. Libere o acesso nas configurações do aparelho.'); return; }
+        void capturar(); timer = setInterval(capturar, 5000);
+      } catch { if (!cancelado) setStatus('Não foi possível iniciar o GPS.'); }
     };
     void iniciar();
-    return () => { ativo = false; clearInterval(timer); void envio.catch(() => {}).then(() => pararLocalizacao()).catch(() => {}); };
-  }, [ligado]);
-  return ligado ? status : 'GPS desligado';
+    return () => { cancelado = true; clearInterval(timer); void envio.catch(() => {}).then(() => pararLocalizacao(placa)).catch(() => {}); };
+  }, [ligado, placa]);
+  return status;
 }
-

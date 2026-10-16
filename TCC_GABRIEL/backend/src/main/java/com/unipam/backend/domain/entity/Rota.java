@@ -12,6 +12,24 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "tb_rota")
 public class Rota {
+    @jakarta.persistence.ElementCollection
+    @jakarta.persistence.OrderColumn(name = "ordem")
+    @Column(length = 100)
+    private java.util.List<String> paradas = new java.util.ArrayList<>();
+    @Column(length = 500) private String avisoMensagem;
+    private String avisoMotorista;
+    private java.time.Instant avisoEm;
+    @Column(length = 20) private String suporte;
+    public java.util.List<String> getParadas() { return paradas; }
+    public void setParadas(java.util.List<String> value) { paradas.clear(); paradas.addAll(value); }
+    public String getAvisoMensagem() { return avisoMensagem; }
+    public void setAvisoMensagem(String value) { avisoMensagem = value; }
+    public String getAvisoMotorista() { return avisoMotorista; }
+    public void setAvisoMotorista(String value) { avisoMotorista = value; }
+    public java.time.Instant getAvisoEm() { return avisoEm; }
+    public void setAvisoEm(java.time.Instant value) { avisoEm = value; }
+    public String getSuporte() { return suporte; }
+    public void setSuporte(String value) { suporte = value; }
 
     public Long getId() {
         return id;

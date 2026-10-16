@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 public interface CicloDiarioRepository extends JpaRepository<CicloDiario, Long> {
+    List<CicloDiario> findTop30ByEstudanteIdOrderByDiaDesc(Long id);
     Optional<CicloDiario> findByEstudanteIdAndDia(Long id, LocalDate dia);
     List<CicloDiario> findByVeiculoPlacaAndDiaOrderByIdaAsc(String placa, LocalDate dia);
     void deleteByVeiculoPlacaAndDia(String placa, LocalDate dia);
 }
-

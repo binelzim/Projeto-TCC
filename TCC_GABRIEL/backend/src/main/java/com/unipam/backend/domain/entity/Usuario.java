@@ -9,6 +9,9 @@ public class Usuario {
     @Column(nullable = false) private String nome;
     @Column(nullable = false) private String role;
     @OneToOne private Estudante estudante;
+    @OneToOne private Veiculo veiculo;
+    public Veiculo getVeiculo() { return veiculo; }
+    public void setVeiculo(Veiculo value) { veiculo = value; }
     public String getLogin() { return login; }
     public void setLogin(String value) { login = value; }
     public String getSenhaHash() { return senhaHash; }
@@ -20,4 +23,3 @@ public class Usuario {
     public Estudante getEstudante() { return estudante; }
     public void setEstudante(Estudante value) { estudante = value; }
 }
-

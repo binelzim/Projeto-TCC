@@ -6,18 +6,18 @@ import org.springframework.web.bind.annotation.*;
 public class RastreioController {
     private final RastreioService rastreio;
     private final AuthService auth;
-    public RastreioController(RastreioService rastreio, AuthService auth) { this.rastreio = rastreio; this.auth = auth; }
+    private final FrotaService frota;
+    public RastreioController(RastreioService rastreio, AuthService auth, FrotaService frota) { this.rastreio = rastreio; this.auth = auth; this.frota = frota; }
     @PostMapping("/{placa}")
     public void atualizar(@RequestHeader(value = "Authorization", required = false) String h, @PathVariable String placa, @RequestBody LocalizacaoDTO req) {
-        auth.exigir(h, "MOTORISTA"); rastreio.atualizar(placa, req.latitude(), req.longitude(), h);
+        frota.placa(auth.exigir(h, "MOTORISTA"), placa); rastreio.atualizar(placa, req.latitude(), req.longitude(), req.velocidadeKmh(), req.precisaoMetros(), h);
     }
     @GetMapping("/{placa}")
     public LocalizacaoDTO buscar(@RequestHeader(value = "Authorization", required = false) String h, @PathVariable String placa) {
-        auth.exigir(h, null); return rastreio.obterLocalizacao(placa);
+        frota.placa(auth.exigir(h, null), placa); return rastreio.obterLocalizacao(placa);
     }
     @DeleteMapping("/{placa}")
     public void parar(@RequestHeader(value = "Authorization", required = false) String h, @PathVariable String placa) {
-        auth.exigir(h, "MOTORISTA"); rastreio.parar(placa, h);
+        frota.placa(auth.exigir(h, "MOTORISTA"), placa); rastreio.parar(placa, h);
     }
 }
-

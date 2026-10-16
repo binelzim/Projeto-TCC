@@ -40,6 +40,15 @@ public class DataInitializer implements CommandLineRunner {
             seedUsuario(e.getMatricula(), e.getNomeCompleto(), e.getCpfHash(), "ESTUDANTE", e);
         }
         seedUsuario("motorista", "Motorista da rota", driverPassword, "MOTORISTA", null);
+        Veiculo padrao = veiculos.findByPlaca("ABC-1234").orElseThrow();
+        Rota rotaPadrao = padrao.getRotaAtual();
+        if (rotaPadrao.getParadas().isEmpty()) rotaPadrao.setParadas(java.util.List.of("Praça da Matriz", "Rodoviária Municipal", "Trevo Principal", "Portaria UNIPAM"));
+        for (Estudante e : estudantes.findAll()) {
+            if (e.getVeiculo() == null) e.setVeiculo(padrao);
+            if (e.getCurso() == null) e.setCurso("Sistemas de Informação / Noturno");
+        }
+        Usuario motorista = usuarios.findByLogin("motorista").orElseThrow();
+        if (motorista.getVeiculo() == null) motorista.setVeiculo(padrao);
     }
     private void seedEstudante(String matricula, String nome) {
         if (estudantes.findByMatricula(matricula).isPresent()) return;
@@ -52,4 +61,3 @@ public class DataInitializer implements CommandLineRunner {
         u.setRole(role); u.setEstudante(estudante); usuarios.save(u);
     }
 }
-

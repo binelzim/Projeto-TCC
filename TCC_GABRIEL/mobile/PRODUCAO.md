@@ -1,35 +1,39 @@
-# Aplicativo — publicação e teste
+# App único — publicação e homologação
 
-O app usa Expo SDK 57 e atende estudante e motorista. O guia completo está em [DEPLOY_NUVEM.md](../DEPLOY_NUVEM.md).
+A mesma base Expo SDK 57 atende estudante e motorista. As configurações completas estão em [DEPLOY_NUVEM.md](../DEPLOY_NUVEM.md).
 
 ## Endereço da API
 
-Copie .env.example para .env e use apenas a origem:
-
-```text
+~~~text
 EXPO_PUBLIC_API_URL=https://SUA_API.onrender.com
-```
+~~~
 
-Em desenvolvimento no navegador, pode usar http://localhost:8080. No celular físico, use o IP do computador ou o endereço HTTPS da nuvem. Não acrescente /api/checkin. Sufixos antigos são removidos automaticamente por services/api.ts.
+Informe somente a origem, sem /api. No navegador local, use http://localhost:8080; no celular, use o IP acessível do computador ou uma API HTTPS. A URL é incorporada ao build.
 
 ## Web
 
-```text
+~~~text
 npm ci
 npx expo export --platform web
-```
+npx expo serve --port 8081
+~~~
 
-Publique a pasta dist. O vercel.json já configura o build e as URLs estáticas. A autenticação ocorre no cliente e a API protege cada operação por perfil.
+Publique mobile/dist. O vercel.json usa páginas estáticas com cleanUrls. A API valida a sessão, o perfil e o veículo em cada operação restrita.
 
-## Aplicativo instalado
+## Aplicativo instalado e Expo Go
 
-Configure EXPO_PUBLIC_API_URL no ambiente usado pelo EAS. Use o perfil preview de eas.json para uma distribuição interna e production para a loja. Não há novas bibliotecas de mapas; o rastreio mantém o radar e o link para Google Maps.
+Use os perfis de eas.json e configure a URL da API no ambiente do build. Expo Go precisa ser compatível com o SDK instalado. Não há bibliotecas de mapas nativos. O rastreio usa expo-location, cálculo local e link para Google Maps.
 
-A localização usa o módulo oficial expo-location, na versão compatível com o Expo instalado. A transmissão funciona enquanto o painel estiver em primeiro plano. Negação de permissão é apresentada na tela.
+A transmissão usa Accuracy.BestForNavigation em primeiro plano. Leituras com precisão pior que 100 m, antigas ou saltos impossíveis são descartadas. Oscilações pequenas são filtradas. O servidor expira a posição após 30 segundos.
 
-## NFC
+O aluno pode autorizar o cálculo de distância. Sua coordenada não é enviada à API. A estimativa em linha reta não considera ruas, trânsito nem direção do veículo.
 
-A implementação está em services/nfc.ts. No Expo Go e navegador, o botão explica a indisponibilidade. Em um build nativo com aparelho compatível, lê o primeiro registro de texto NDEF. Grave ABC-1234 na tag do veículo ou a matrícula/token na carteirinha do respectivo estudante. O backend sempre vincula o embarque ao aluno autenticado.
+## Acessibilidade
 
-Não é necessário descomentar código para habilitar NFC. O plugin já está no app.json. GPS, câmera e NFC precisam de teste final em aparelho físico; a exportação web não confirma o funcionamento do hardware.
+Temas, escala de fonte, toque facilitado, voz e vibração ficam no AsyncStorage. A voz usa Web Speech no navegador e expo-speech no aplicativo. A vibração usa expo-haptics somente em dispositivos nativos. A linha do tempo respeita a preferência do sistema por redução de movimento.
 
+## NFC e permissões
+
+Em aplicativo compilado, services/nfc.ts lê uma tag NDEF de texto contendo a placa ou identificação do aluno autenticado. No navegador e no Expo Go, informa a indisponibilidade. QR e a simulação demo continuam utilizáveis.
+
+Homologue em aparelho real: QR/câmera, permissões negadas e concedidas, GPS parado e em deslocamento, perda de sinal, voz, vibração, menu de compartilhamento e NFC. Compilar ou exportar o app não comprova funcionamento do hardware.
