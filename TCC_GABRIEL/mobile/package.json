@@ -2,6 +2,9 @@
   "name": "mobile",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "start": "expo start",

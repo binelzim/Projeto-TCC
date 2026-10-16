@@ -3,8 +3,10 @@ services:
     name: rota-universitaria-api
     runtime: docker
     plan: free
-    rootDir: backend
+    branch: main
+    rootDir: TCC_GABRIEL/backend
     dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /api/health
     envVars:
       - key: DEMO_ENABLED

@@ -4,14 +4,16 @@ A arquitetura possui dois serviços: a API Java e o aplicativo Expo, que atende 
 
 ## 1. Repositório
 
-Disponibilize os fontes em um repositório acessível ao provedor escolhido. Este diretório local não contém um repositório Git inicializado. Exclua .env, node_modules, target, dist e arquivos de backup; o .gitignore já cobre esses arquivos.
+Os fontes estão em [binelzim/Projeto-TCC](https://github.com/binelzim/Projeto-TCC), branch **main**. Nesse repositório, o projeto fica dentro de **TCC_GABRIEL/**. Os caminhos configurados nos provedores precisam incluir essa pasta, mesmo que o diretório local já seja o projeto.
+
+O .gitignore exclui .env, node_modules, target, dist e arquivos de backup. As variáveis de publicação devem ser configuradas nos provedores.
 
 ## 2. Backend no Render
 
-1. Crie um Web Service a partir do repositório.
-2. Configure Root Directory **backend**, runtime **Docker** e Dockerfile **./Dockerfile**.
+1. Crie um Web Service a partir de **https://github.com/binelzim/Projeto-TCC**, branch **main**.
+2. Configure Root Directory **TCC_GABRIEL/backend**, runtime **Docker**, Dockerfile **./Dockerfile**, Docker Context **.** e plano **Free**.
 3. Use Health Check Path **/api/health**.
-4. Para a banca, mantenha DEMO_ENABLED=true. O render.yaml da raiz oferece a configuração equivalente via Blueprint.
+4. Para a banca, mantenha DEMO_ENABLED=true e CHECKIN_COOLDOWN_SECONDS=10. Para usar Blueprint, informe o caminho **TCC_GABRIEL/render.yaml** na configuração; ele define o serviço gratuito equivalente.
 5. Após publicar, copie a origem HTTPS e confira a resposta {"status":"UP"} em /api/health.
 
 A API respeita PORT. H2 é suficiente para demonstrar, mas perde os dados ao reiniciar. O serviço gratuito pode suspender por inatividade; abra a API antes da banca e confira os limites atuais na [documentação do Render](https://render.com/docs/free).
@@ -19,16 +21,26 @@ A API respeita PORT. H2 é suficiente para demonstrar, mas perde os dados ao rei
 ## 3. App único na Vercel
 
 1. Importe o repositório em um projeto da Vercel.
-2. Root Directory: **mobile**. Framework: **Other**.
+2. Root Directory: **TCC_GABRIEL/mobile**. Framework: **Other**. Use o plano pessoal **Hobby** para esta demonstração acadêmica.
 3. Installation Command: **npm ci**.
-4. Build Command: **npx expo export --platform web**.
+4. Build Command: **node scripts/check-deploy-env.mjs && npx expo export --platform web** (já definido no vercel.json).
 5. Output Directory: **dist**.
-6. Configure **EXPO_PUBLIC_API_URL** com a origem HTTPS da API, sem /api.
+6. Configure **EXPO_PUBLIC_API_URL** no ambiente **Production** com a origem HTTPS real da API, sem /api. A API deve estar publicada e saudável antes deste passo. Configure também **Preview** se for usar publicações de teste.
 7. Publique e teste a página inicial, /ajuda e /configuracoes. Contas de estudante e motorista entram no mesmo endereço.
 
-O mobile/vercel.json configura o build, a saída e cleanUrls. O aplicativo usa web.output=static; cada rota tem seu HTML. Não é necessário criar um segundo site por perfil. Consulte [publicação web do Expo](https://docs.expo.dev/guides/publishing-websites/).
+O mobile/vercel.json configura a instalação, o build, a saída e cleanUrls. O build de publicação recusa uma URL de API ausente, HTTP ou localhost para evitar publicar uma tela que depende do computador local. O aplicativo usa web.output=static; cada rota tem seu HTML. Não é necessário criar um segundo site por perfil. Consulte [publicação web do Expo](https://docs.expo.dev/guides/publishing-websites/).
 
-Use Node.js 22.13 ou posterior compatível com as dependências fixadas. A URL da API é incorporada ao build; faça uma nova publicação se ela mudar. Não use localhost na publicação.
+O package.json fixa a série Node.js **22.x** na Vercel; localmente use 22.13 ou posterior dessa série. A URL da API é incorporada ao build; faça uma nova publicação se ela mudar.
+
+### Conferência após publicar
+
+- A API precisa responder **200** e **{"status":"UP"}** em **/api/health**.
+- O endereço público do app deve abrir e permitir atualizar diretamente **/ajuda** e **/configuracoes**.
+- Valide o login de estudante e motorista, registro de ida/volta e atualização da chamada em duas abas.
+- Confirme que as requisições do aplicativo vão para a API HTTPS publicada.
+- Se a API estiver suspensa por inatividade, espere a inicialização em /api/health e tente novamente no app.
+
+Configurar os arquivos ou concluir o build local não significa que o deploy foi realizado. A publicação depende do acesso autorizado às contas Render e Vercel; só considere concluída após conferir os endereços públicos.
 
 ## 4. Celular
 
